@@ -1,0 +1,6 @@
+*.png
+*.jpg
+*.gif
+models/*
+*.pyc
+LICENSE
