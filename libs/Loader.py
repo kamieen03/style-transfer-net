@@ -9,6 +9,7 @@ def is_image_file(filename):
 def default_loader(path):
     return Image.open(path).convert('RGB')
 
+
 class Dataset(data.Dataset):
     def __init__(self,dataPath,loadSize,fineSize,test=False,video=False):
         super(Dataset,self).__init__()
@@ -17,6 +18,11 @@ class Dataset(data.Dataset):
         self.image_list = sorted(self.image_list)
         if(video):
             self.image_list = sorted(self.image_list)
+
+        def resize_1st_axis(im):
+            w, h = im.size
+            return im.resize((fineSize, int(fineSize*h/w)))
+
         if not test:
             self.transform = transforms.Compose([
             		         transforms.Resize(fineSize),
@@ -25,7 +31,7 @@ class Dataset(data.Dataset):
             		         transforms.ToTensor()])
         else:
             self.transform = transforms.Compose([
-            		         transforms.Resize(fineSize),
+                             transforms.Lambda(resize_1st_axis),
             		         transforms.ToTensor()])
 
         self.test = test
