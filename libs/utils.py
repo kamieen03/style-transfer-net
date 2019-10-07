@@ -10,6 +10,7 @@ from PIL import Image
 import scipy.sparse.linalg
 from cv2.ximgproc import jointBilateralFilter
 from numpy.lib.stride_tricks import as_strided
+import matplotlib.pyplot as plt
 
 def whiten(cF):
     cFSize = cF.size()
@@ -65,8 +66,8 @@ def makeVideo(content,style,props,outf):
         imgj = cv2.imread('prop.png')
         imgc = cv2.imread('content.png')
 
-        video.write(imgj)
-        ori_video.write(imgc)
+        video.write(prop)
+        ori_video.write(cont)
         # RGB or BRG, yuks
     video.release()
     ori_video.release()
@@ -90,3 +91,66 @@ def print_options(opt):
     with open(file_name, 'wt') as opt_file:
         opt_file.write(message)
         opt_file.write('\n')
+
+def mosaic(contents, styles, stylized):
+    """
+    Concatenates, content images, style images and stylized images
+    into one big mosaic picture. It is assumed all the stylized images have the same width.
+    :param contents: dictionary of content images and their names
+    :type  contents: List[numpy.ndarray]
+    :param styles: dictionary of style images and theit names
+    :type  styles: List[numpy.ndarray]
+    :param stylized: dictionary of stylized(result) images and pair
+                     of corresponding content and style image names
+    :type  stylized: List[List[numpy.ndarray]]
+    :returns: mosaic of pictures ordered similarly to e.g.
+        https://github.com/FalongShen/styletransfer/raw/master/python/1.png
+    :rtype: numpy.ndarray
+    """
+    GAP = 2     #gap in pixels between images in grid
+    _, _, W = stylized[0][0].shape
+
+    #reshape all pictures to the same width
+    for i, pic in enumerate(contents):
+    #    _, h, w = pic.shape
+        _, newh, neww = stylized[i][0].shape
+        pic = np.resize(pic, (3, newh, neww))
+    for pic in styles:
+        _, h, w = pic.shape
+        pic = pic.reshape((3, int(W * h/w), W))
+
+    #create empty canvas
+    max_style_h = int(max([pic.shape[1] for pic in styles]))
+    total_h = max_style_h + sum([pic.shape[1] for pic in contents]) + len(contents)*GAP
+    total_w = (len(styles) + 1) * W + len(styles)*GAP
+    result = np.zeros((3, total_h, total_w))
+
+    #paint content and style images in the first column and row
+    h = max_style_h + GAP
+    for pic in contents:
+        _, pic_h, _ = pic.shape
+        result[:, h:h + pic_h, :W] = pic
+        h += pic_h + GAP
+    w = W + GAP
+    for pic in styles:
+        print(pic.shape)
+        _, pic_h, _ = pic.shape
+        result[:, max_style_h - pic_h:max_style_h, w:w+W] = pic
+        w += W + GAP
+    
+    #paint stylized images in correct columns and rows
+    h, w = max_style_h + GAP, W + GAP
+    for row in stylized:
+        for pic in row:
+            _, pic_h, _ = pic.shape
+            result[:, h:h+pic_h, w:w+W] = pic
+            w += W + GAP
+        w = W + GAP
+        h += row[0].shape[1] + GAP
+
+
+    result = result.transpose(1,2,0)
+    return result
+
+
+
