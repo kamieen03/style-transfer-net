@@ -31,15 +31,6 @@ opt = parser.parse_args()
 opt.cuda = torch.cuda.is_available()
 print(opt)
 
-################# DATA #################
-def loadImg(imgPath):
-    img = Image.open(imgPath).convert('RGB')
-    transform = transforms.Compose([
-                transforms.Scale(opt.fineSize),
-                transforms.ToTensor()])
-    return transform(img)
-style = loadImg(opt.style).unsqueeze(0)
-
 ################# MODEL #################
 if(opt.layer == 'r31'):
     matrix = MulLayer(layer='r31')
@@ -84,12 +75,14 @@ out = cv2.VideoWriter('/tmp/out_style.avi', fourcc, 20.0, (600,800))
 with torch.no_grad():
     sF = vgg(style)
 
+i = 0
+tt = time.time()
 while(True):
     ret, frame = cap.read()
     frame = frame.transpose((2,1,0))
     frame = torch.from_numpy().unsqueeze(0)
-    frame = frame/255.0
     content.data.copy_(frame)
+    content = content/255.0
     with torch.no_grad():
         cF = vgg(content)
         if(opt.layer == 'r41'):
@@ -103,6 +96,8 @@ while(True):
     cv2.imshow('frame',transfer)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    i += 1
+    print((time.time()-tt)/i)
 
 # When everything done, release the capture
 out.release()
