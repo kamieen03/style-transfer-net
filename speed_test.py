@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import cv2
-from PIL import Image
 import torch
 import numpy as np
 import argparse
+import time
 
 from libs.Loader import Dataset
 from libs.Matrix import MulLayer
@@ -41,7 +41,7 @@ elif(opt.layer == 'r41'):
     vgg = encoder4()
     dec = decoder4()
 vgg.load_state_dict(torch.load(opt.vgg_dir))
-dec.load_state_dict(torch.load(opt.dec_dir))
+dec.load_state_dict(torch.load(opt.decoder_dir))
 matrix.load_state_dict(torch.load(opt.matrixPath))
 for param in vgg.parameters():
     param.requires_grad = False
@@ -51,7 +51,8 @@ for param in matrix.parameters():
     param.requires_grad = False
 
 ################# GLOBAL VARIABLE #################
-content = torch.Tensor(1,3,800,600)
+content = torch.Tensor(1,3,1920,1080)
+style = torch.Tensor(1,3,1920,1080)
 
 ################# GPU  #################
 if(opt.cuda):
@@ -62,16 +63,17 @@ if(opt.cuda):
     style = style.cuda()
     content = content.cuda()
 
-totalTime = 0
-imageCounter = 0
-contents = []
-styles = []
-cap = cv2.VideoCapture('/tmp/in_vid.mp4')   #assume it's 800x600 (HxW)
+cap = cv2.VideoCapture('/home/kamil/Desktop/style-transfer-net/data/videos/in/in_vid.mp4')   #assume it's 800x600 (HxW)
 #cap.set(3,600)
 #cap.set(4,800)
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-out = cv2.VideoWriter('/tmp/out_style.avi', fourcc, 20.0, (600,800))
+out = cv2.VideoWriter('/home/kamil/Desktop/style-transfer-net/data/videos/out/out_vid.avi', fourcc, 20.0, (600,800))
 
+style_tmp = cv2.imread('/home/kamil/Desktop/style-transfer-net/data/style/style1.jpg')
+style_tmp = style_tmp.transpose((2,0,1))
+style_tmp = torch.from_numpy(style_tmp).unsqueeze(0)
+style.data.copy_(style_tmp)
+style = style / 255.0
 with torch.no_grad():
     sF = vgg(style)
 
@@ -79,23 +81,28 @@ i = 0
 tt = time.time()
 while(True):
     ret, frame = cap.read()
-    frame = frame.transpose((2,1,0))
-    frame = torch.from_numpy().unsqueeze(0)
+    if not ret: break
+    frame = frame.transpose((2,0,1))
+    frame = torch.from_numpy(frame).unsqueeze(0)
     content.data.copy_(frame)
     content = content/255.0
+
     with torch.no_grad():
         cF = vgg(content)
+        print(cF.shape, sF.shape)
         if(opt.layer == 'r41'):
             feature,transmatrix = matrix(cF[opt.layer],sF[opt.layer])
         else:
             feature,transmatrix = matrix(cF,sF)
         transfer = dec(feature)
-    transfer = transfer.clamp(0,1).squeeze(0).data.cpu().numpy()
+    transfer = transfer.clamp(0,1).squeeze(0)*255
+    transfer = transfer.type(torch.uint8).data.cpu().numpy()
     transfer = transfer.transpose((1,2,0))
+
     #out.write(np.uint8(transfer*255))
-    cv2.imshow('frame',transfer)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    #cv2.imshow('frame',transfer)
+    #if cv2.waitKey(1) & 0xFF == ord('q'):
+    #    break
     i += 1
     print((time.time()-tt)/i)
 
