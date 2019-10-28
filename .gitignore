@@ -3,4 +3,7 @@
 *.gif
 models/*
 *.pyc
+*.swp
+*.pth
+*.onnx
 LICENSE
