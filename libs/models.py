@@ -19,7 +19,7 @@ class encoder3(nn.Module):
         self.relu3 = nn.ReLU(inplace=True)
         # 224 x 224
 
-        self.maxPool = nn.MaxPool2d(kernel_size=2,stride=2,return_indices = True)
+        self.maxPool = nn.MaxPool2d(kernel_size=2,stride=2,return_indices = False)
         # 112 x 112
 
         self.reflecPad4 = nn.ReflectionPad2d((1,1,1,1))
@@ -32,7 +32,7 @@ class encoder3(nn.Module):
         self.relu5 = nn.ReLU(inplace=True)
         # 112 x 112
 
-        self.maxPool2 = nn.MaxPool2d(kernel_size=2,stride=2,return_indices = True)
+        self.maxPool2 = nn.MaxPool2d(kernel_size=2,stride=2,return_indices = False)
         # 56 x 56
 
         self.reflecPad6 = nn.ReflectionPad2d((1,1,1,1))
@@ -47,14 +47,14 @@ class encoder3(nn.Module):
         out = self.reflecPad3(out)
         out = self.conv3(out)
         pool1 = self.relu3(out)
-        out,pool_idx = self.maxPool(pool1)
+        out = self.maxPool(pool1)
         out = self.reflecPad4(out)
         out = self.conv4(out)
         out = self.relu4(out)
         out = self.reflecPad5(out)
         out = self.conv5(out)
         pool2 = self.relu5(out)
-        out,pool_idx2 = self.maxPool2(pool2)
+        out = self.maxPool2(pool2)
         out = self.reflecPad6(out)
         out = self.conv6(out)
         out = self.relu6(out)
@@ -173,51 +173,45 @@ class encoder4(nn.Module):
         self.relu10 = nn.ReLU(inplace=True)
         # 28 x 28
     def forward(self,x,sF=None,matrix11=None,matrix21=None,matrix31=None):
-        output = {}
         out = self.conv1(x)
         out = self.reflecPad1(out)
         out = self.conv2(out)
-        output['r11'] = self.relu2(out)
-        out = self.reflecPad7(output['r11'])
+        out = self.relu2(out)
+        out = self.reflecPad7(out)
 
         out = self.conv3(out)
-        output['r12'] = self.relu3(out)
+        out = self.relu3(out)
 
-        output['p1'] = self.maxPool(output['r12'])
-        out = self.reflecPad4(output['p1'])
+        out = self.maxPool(out)
+        out = self.reflecPad4(out)
         out = self.conv4(out)
-        output['r21'] = self.relu4(out)
-        out = self.reflecPad7(output['r21'])
+        out = self.relu4(out)
+        out = self.reflecPad7(out)
 
         out = self.conv5(out)
-        output['r22'] = self.relu5(out)
+        out = self.relu5(out)
 
-        output['p2'] = self.maxPool2(output['r22'])
-        out = self.reflecPad6(output['p2'])
+        out = self.maxPool2(out)
+        out = self.reflecPad6(out)
         out = self.conv6(out)
-        output['r31'] = self.relu6(out)
-        if(matrix31 is not None):
-            feature3,transmatrix3 = matrix31(output['r31'],sF['r31'])
-            out = self.reflecPad7(feature3)
-        else:
-            out = self.reflecPad7(output['r31'])
+        out = self.relu6(out)
+        out = self.reflecPad7(out)
         out = self.conv7(out)
-        output['r32'] = self.relu7(out)
+        out = self.relu7(out)
 
-        out = self.reflecPad8(output['r32'])
+        out = self.reflecPad8(out)
         out = self.conv8(out)
-        output['r33'] = self.relu8(out)
+        out = self.relu8(out)
 
-        out = self.reflecPad9(output['r33'])
+        out = self.reflecPad9(out)
         out = self.conv9(out)
-        output['r34'] = self.relu9(out)
+        out = self.relu9(out)
 
-        output['p3'] = self.maxPool3(output['r34'])
-        out = self.reflecPad10(output['p3'])
+        out = self.maxPool3(out)
+        out = self.reflecPad10(out)
         out = self.conv10(out)
-        output['r41'] = self.relu10(out)
-
-        return output
+        out = self.relu10(out)
+        return out
 
 class decoder4(nn.Module):
     def __init__(self):
@@ -478,70 +472,63 @@ class encoder5(nn.Module):
         self.relu14 = nn.ReLU(inplace=True)
 
     def forward(self,x,sF=None,contentV256=None,styleV256=None,matrix11=None,matrix21=None,matrix31=None):
-        output = {}
         out = self.conv1(x)
         out = self.reflecPad1(out)
         out = self.conv2(out)
-        output['r11'] = self.relu2(out)
-        out = self.reflecPad7(output['r11'])
+        out = self.relu2(out)
+        out = self.reflecPad7(out)
 
-        #out = self.reflecPad3(output['r11'])
         out = self.conv3(out)
-        output['r12'] = self.relu3(out)
+        out = self.relu3(out)
 
-        output['p1'] = self.maxPool(output['r12'])
-        out = self.reflecPad4(output['p1'])
+        out= self.maxPool(out)
+        out = self.reflecPad4(out)
         out = self.conv4(out)
-        output['r21'] = self.relu4(out)
-        out = self.reflecPad7(output['r21'])
+        out = self.relu4(out)
+        out = self.reflecPad7(out)
 
-        #out = self.reflecPad5(output['r21'])
         out = self.conv5(out)
-        output['r22'] = self.relu5(out)
+        out = self.relu5(out)
 
-        output['p2'] = self.maxPool2(output['r22'])
-        out = self.reflecPad6(output['p2'])
+        out= self.maxPool2(out)
+        out = self.reflecPad6(out)
         out = self.conv6(out)
-        output['r31'] = self.relu6(out)
-        if(styleV256 is not None):
-            feature = matrix31(output['r31'],sF['r31'],contentV256,styleV256)
-            out = self.reflecPad7(feature)
-        else:
-            out = self.reflecPad7(output['r31'])
+        out = self.relu6(out)
+        out = self.reflecPad7(out)
         out = self.conv7(out)
-        output['r32'] = self.relu7(out)
+        out = self.relu7(out)
 
-        out = self.reflecPad8(output['r32'])
+        out = self.reflecPad8(out)
         out = self.conv8(out)
-        output['r33'] = self.relu8(out)
+        out = self.relu8(out)
 
-        out = self.reflecPad9(output['r33'])
+        out = self.reflecPad9(out)
         out = self.conv9(out)
-        output['r34'] = self.relu9(out)
+        out = self.relu9(out)
 
-        output['p3'] = self.maxPool3(output['r34'])
-        out = self.reflecPad10(output['p3'])
+        out = self.maxPool3(out)
+        out = self.reflecPad10(out)
         out = self.conv10(out)
-        output['r41'] = self.relu10(out)
+        out = self.relu10(out)
 
-        out = self.reflecPad11(output['r41'])
+        out = self.reflecPad11(out)
         out = self.conv11(out)
-        output['r42'] = self.relu11(out)
+        out = self.relu11(out)
 
-        out = self.reflecPad12(output['r42'])
+        out = self.reflecPad12(out)
         out = self.conv12(out)
-        output['r43'] = self.relu12(out)
+        out = self.relu12(out)
 
-        out = self.reflecPad13(output['r43'])
+        out = self.reflecPad13(out)
         out = self.conv13(out)
-        output['r44'] = self.relu13(out)
+        out = self.relu13(out)
 
-        output['p4'] = self.maxPool4(output['r44'])
+        out= self.maxPool4(out)
 
-        out = self.reflecPad14(output['p4'])
+        out = self.reflecPad14(out)
         out = self.conv14(out)
-        output['r51'] = self.relu14(out)
-        return output
+        out = self.relu14(out)
+        return out
 
 class decoder5(nn.Module):
     def __init__(self):
