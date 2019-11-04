@@ -49,7 +49,7 @@ class MulLayer(nn.Module):
             self.unzip = nn.Conv2d(matrixSize,256,1,1,0)
         self.transmatrix = None
 
-    def forward(self,cF,sF,trans=True):
+    def forward(self, cF,sF,trans=True):
         cFBK = cF.clone()
         cb,cc,ch,cw = cF.size()
         cFF = cF.view(cb,cc,-1)
@@ -81,7 +81,7 @@ class MulLayer(nn.Module):
             transfeature = torch.bmm(transmatrix,compress_content).view(b,c,h,w)
             out = self.unzip(transfeature.view(b,c,h,w))
             out = out + sMeanC
-            return out, transmatrix
+            return out#, transmatrix
         else:
             out = self.unzip(compress_content.view(b,c,h,w))
             out = out + cMean
