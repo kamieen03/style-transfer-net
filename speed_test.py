@@ -5,6 +5,7 @@ from PIL import Image
 import torch
 import numpy as np
 import argparse
+import tensorrt as trt
 
 from libs.Loader import Dataset
 from libs.Matrix import MulLayer
@@ -52,6 +53,7 @@ for param in matrix.parameters():
 
 ################# GLOBAL VARIABLE #################
 content = torch.Tensor(1,3,800,600)
+style = torch.Tensor(1,3,800,600)
 
 ################# GPU  #################
 if(opt.cuda):

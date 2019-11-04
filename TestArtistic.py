@@ -1,4 +1,5 @@
 import os
+import cv2
 import torch
 import argparse
 from libs.Loader import Dataset
@@ -8,6 +9,8 @@ import torch.backends.cudnn as cudnn
 from libs.utils import print_options
 from libs.models import encoder3,encoder4, encoder5
 from libs.models import decoder3,decoder4, decoder5
+from libs.utils import mosaic
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--vgg_dir", default='models/vgg_r41.pth',
@@ -26,7 +29,7 @@ parser.add_argument("--batchSize", type=int,default=1,
                     help='batch size')
 parser.add_argument('--loadSize', type=int, default=256,
                     help='scale image size')
-parser.add_argument('--fineSize', type=int, default=256,
+parser.add_argument('--fineSize', type=int, default=512,
                     help='crop image size')
 parser.add_argument("--layer", default="r41",
                     help='which features to transfer, either r31 or r41')
@@ -75,9 +78,12 @@ if(opt.cuda):
     contentV = contentV.cuda()
     styleV = styleV.cuda()
 
+contents, styles, stylized = [], [], []
 for ci,(content,contentName) in enumerate(content_loader):
     contentName = contentName[0]
     contentV.resize_(content.size()).copy_(content)
+    contents.append(torch.Tensor.numpy(content.cpu())[0])
+    stylized.append([])
     for sj,(style,styleName) in enumerate(style_loader):
         styleName = styleName[0]
         styleV.resize_(style.size()).copy_(style)
@@ -86,7 +92,6 @@ for ci,(content,contentName) in enumerate(content_loader):
         with torch.no_grad():
             sF = vgg(styleV)
             cF = vgg(contentV)
-
             if(opt.layer == 'r41'):
                 feature,transmatrix = matrix(cF[opt.layer],sF[opt.layer])
             else:
@@ -96,3 +101,9 @@ for ci,(content,contentName) in enumerate(content_loader):
         transfer = transfer.clamp(0,1)
         vutils.save_image(transfer,'%s/%s_%s.png'%(opt.outf,contentName,styleName),normalize=True,scale_each=True,nrow=opt.batchSize)
         print('Transferred image saved at %s%s_%s.png'%(opt.outf,contentName,styleName))
+        stylized[-1].append(torch.Tensor.numpy(transfer.cpu())[0])
+
+for sj,(style,styleName) in enumerate(style_loader):
+    styles.append(torch.Tensor.numpy(style.cpu())[0])
+mosaic_img = mosaic(contents, styles, stylized)    
+plt.imsave(f'{opt.outf}/mosaic_img', mosaic_img)
