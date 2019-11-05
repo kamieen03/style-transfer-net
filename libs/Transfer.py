@@ -5,15 +5,16 @@ import torch.nn
 
 
 class Transfer(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, load_weights=True):
         super(Transfer, self).__init__()
         self.vgg = encoder3()
         self.matrix = MulLayer(layer='r31')
         self.dec = decoder3()
         self.sF = None
-        self.vgg.load_state_dict(torch.load('models/vgg_r31.pth'))
-        self.dec.load_state_dict(torch.load('models/dec_r31.pth'))
-        self.matrix.load_state_dict(torch.load('models/r31.pth'))
+        if load_weights:
+            self.vgg.load_state_dict(torch.load('models/vgg_r31.pth'))
+            self.dec.load_state_dict(torch.load('models/dec_r31.pth'))
+            self.matrix.load_state_dict(torch.load('models/r31.pth'))
 
 
     def forward(self, content, style):
