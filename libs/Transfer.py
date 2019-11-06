@@ -5,22 +5,20 @@ import torch.nn
 
 
 class Transfer(torch.nn.Module):
-    def __init__(self, load_weights=True):
+    def __init__(self):
         super(Transfer, self).__init__()
         self.vgg = encoder3()
         self.matrix = MulLayer(layer='r31')
         self.dec = decoder3()
         self.sF = None
-        if load_weights:
-            self.vgg.load_state_dict(torch.load('models/vgg_r31.pth'))
-            self.dec.load_state_dict(torch.load('models/dec_r31.pth'))
-            self.matrix.load_state_dict(torch.load('models/r31.pth'))
 
 
-    def forward(self, content, style):
-        cF = self.vgg(content)
+    def forward(self, content_style): 
+        # TensorRT has a problem with multiple inputs so we concatenate content and style in one tensor
+        # of shape (2,3,H,W); notice content and style have to be of the same shape.
+        cF = self.vgg(content_style[0].unsqueeze(0))
         if self.sF is None:
-            self.sF = self.vgg(style)
+            self.sF = self.vgg(content_style[1].unsqueeze(0))
         cF = self.matrix(cF, self.sF)
         cF = self.dec(cF)
         return cF

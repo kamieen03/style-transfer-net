@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 import torch
+
+import sys
+import os
+sys.path.append(os.path.abspath(__file__ + "/../../"))
+
 from libs.Matrix import MulLayer
 from libs.models import encoder3, encoder4, encoder5
 from libs.models import decoder3, decoder4, decoder5
@@ -47,7 +52,8 @@ decoders_big = [decoder4, decoder5]
 #    del model
 #    print(f'MulLayer {l} finished')
 #
-m = Transfer(load_weights=False).eval().cuda()
+m = Transfer().eval().cuda()
+m.load_state_dict(torch.load('models/vgg_r31.pth'))
 x = torch.randn((1, 3, 1024, 576)).cuda()
 y = torch.randn((1, 3, 1024, 576)).cuda()
 torch.onnx.export(m, (x, y), f'models/onnx/transfer_r31.onnx')

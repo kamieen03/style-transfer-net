@@ -6,30 +6,36 @@ import numpy as np
 import time
 
 from torch2trt import TRTModule
-LAYER = 'r31'
+LAYER = 'full'
 
 ################# PREPARATIONS #################
 
-matrix, vgg, dec = TRTModule(), TRTModule(), TRTModule()
-if(LAYER == 'r31'):
-    matrix.load_state_dict(torch.load('/home/kamil/Desktop/style-transfer-net/models/tensorrt/mul_r31_trt.pth')) 
-    vgg.load_state_dict(torch.load('models/tensorrt/vgg_r31_trt.pth')) 
-    dec.load_state_dict(torch.load('models/tensorrt/dec_r31_trt.pth')) 
-elif(LAYER == 'r41'):
-    matrix.load_state_dict(torch.load('models/tensorrt/mul_r41_trt.pth')) 
-    vgg.load_state_dict(torch.load('models/tensorrt/vgg_r41_trt.pth')) 
-    dec.load_state_dict(torch.load('models/tensorrt/dec_r41_trt.pth')) 
+#matrix, vgg, dec = TRTModule(), TRTModule(), TRTModule()
+t = TRTModule()
+if LAYER == 'full'
+    t.load_state_dict(torch.load('models/transfer_r31.pth')
+    for param in t.parameters():
+        param.requires_grad = False
+else:
+    if LAYER == 'r31':
+        matrix.load_state_dict(torch.load('/home/kamil/Desktop/style-transfer-net/models/tensorrt/mul_r31_trt.pth')) 
+        vgg.load_state_dict(torch.load('models/tensorrt/vgg_r31_trt.pth')) 
+        dec.load_state_dict(torch.load('models/tensorrt/dec_r31_trt.pth')) 
+    elif LAYER == 'r41':
+        matrix.load_state_dict(torch.load('models/tensorrt/mul_r41_trt.pth')) 
+        vgg.load_state_dict(torch.load('models/tensorrt/vgg_r41_trt.pth')) 
+        dec.load_state_dict(torch.load('models/tensorrt/dec_r41_trt.pth')) 
 
-for param in vgg.parameters():
-    param.requires_grad = False
-for param in dec.parameters():
-    param.requires_grad = False
-for param in matrix.parameters():
-    param.requires_grad = False
+    for param in vgg.parameters():
+        param.requires_grad = False
+    for param in dec.parameters():
+        param.requires_grad = False
+    for param in matrix.parameters():
+        param.requires_grad = False
 
 ################# GLOBAL VARIABLE #################
-content = torch.Tensor(1,3,1920,1080)
-style = torch.Tensor(1,3,1920,1080)
+content = torch.Tensor(1,3,576,1024)
+style = torch.Tensor(1,3,576,1024)
 
 ################# GPU  #################
 vgg.cuda()

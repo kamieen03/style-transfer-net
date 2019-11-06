@@ -2,7 +2,6 @@
 import torch
 from torch2trt import torch2trt
 
-
 from libs.models import encoder3, encoder4, encoder5
 from libs.models import decoder3, decoder4, decoder5
 from libs.Matrix import MulLayer
