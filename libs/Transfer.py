@@ -13,12 +13,10 @@ class Transfer(torch.nn.Module):
         self.sF = None
 
 
-    def forward(self, content_style): 
-        # TensorRT has a problem with multiple inputs so we concatenate content and style in one tensor
-        # of shape (2,3,H,W); notice content and style have to be of the same shape.
-        cF = self.vgg(content_style[0].unsqueeze(0))
+    def forward(self, content, style): 
+        cF = self.vgg(content)
         if self.sF is None:
-            self.sF = self.vgg(content_style[1].unsqueeze(0))
+            self.sF = self.vgg(style)
         cF = self.matrix(cF, self.sF)
         cF = self.dec(cF)
         return cF
