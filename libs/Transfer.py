@@ -6,7 +6,7 @@ import torch.nn
 
 class Transfer3(torch.nn.Module):
     def __init__(self):
-        super(Transfer, self).__init__()
+        super(Transfer3, self).__init__()
         self.vgg = encoder3()
         self.matrix = MulLayer(layer='r31')
         self.dec = decoder3()
@@ -23,7 +23,7 @@ class Transfer3(torch.nn.Module):
 
 class Transfer4(torch.nn.Module):
     def __init__(self):
-        super(Transfer, self).__init__()
+        super(Transfer4, self).__init__()
         self.vgg = encoder4()
         self.matrix = MulLayer(layer='r41')
         self.dec = decoder4()
