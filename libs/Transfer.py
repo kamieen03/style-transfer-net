@@ -4,7 +4,7 @@ from libs.models import decoder3
 import torch.nn
 
 
-class Transfer(torch.nn.Module):
+class Transfer_r3(torch.nn.Module):
     def __init__(self):
         super(Transfer, self).__init__()
         self.vgg = encoder3()
@@ -13,9 +13,9 @@ class Transfer(torch.nn.Module):
         self.sF = None
 
 
-    def forward(self, content, style): 
+    def forward(self, content, style=None): 
         cF = self.vgg(content)
-        if self.sF is None:
+        if style is not None:
             self.sF = self.vgg(style)
         cF = self.matrix(cF, self.sF)
         cF = self.dec(cF)
