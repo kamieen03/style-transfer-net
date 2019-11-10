@@ -4,7 +4,7 @@ from libs.models import decoder3, decoder4
 import torch.nn
 
 
-class Transfer_r3(torch.nn.Module):
+class Transfer3(torch.nn.Module):
     def __init__(self):
         super(Transfer, self).__init__()
         self.vgg = encoder3()
@@ -21,7 +21,7 @@ class Transfer_r3(torch.nn.Module):
         cF = self.dec(cF)
         return cF
 
-class Transfer_r4(torch.nn.Module):
+class Transfer4(torch.nn.Module):
     def __init__(self):
         super(Transfer, self).__init__()
         self.vgg = encoder4()
