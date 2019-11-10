@@ -5,7 +5,8 @@ import torch
 import numpy as np
 import argparse
 import tensorrt as trt
-import time
+from time import time
+from torchsummary import summary
 
 from libs.Loader import Dataset
 from libs.Matrix import MulLayer
@@ -31,7 +32,6 @@ parser.add_argument("--layer",default="r31",
 ################# PREPARATIONS #################
 opt = parser.parse_args()
 opt.cuda = torch.cuda.is_available()
-print(opt)
 
 ################# MODEL #################
 if(opt.layer == 'r31'):
@@ -58,16 +58,18 @@ style = torch.Tensor(1,3,256,256)
 
 ################# GPU  #################
 if(opt.cuda):
-    vgg.cuda()
-    dec.cuda()
-    matrix.cuda()
+    vgg.cuda().eval()
+    dec.cuda().eval()
+    matrix.cuda().eval()
 
     style = style.cuda()
     content = content.cuda()
 
+#summary(vgg, (3,576,1024))
+#summary(matrix, [(256,144,256), (256, 64, 64)])
+#summary(dec, (256,144,256))
+
 cap = cv2.VideoCapture('data/videos/tram.avi')   #assume it's 576x1024 (HxW)
-#cap.set(3,600)
-#cap.set(4,800)
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 out = cv2.VideoWriter('data/videos/out_vid.avi', fourcc, 20.0, (1024,576))
 
@@ -80,35 +82,51 @@ with torch.no_grad():
     sF = vgg(style)
 
 i = 0
-tt = time.time()
+pre_tt = 0
+vgg_tt = 0
+mat_tt = 0
+dec_tt = 0
+post_tt = 0
+
 while(True):
+    tt = time()
     ret, frame = cap.read()
     if not ret: break
-    print(frame.shape)
     frame = frame.transpose((2,0,1))
-    print(frame.shape)
     frame = torch.from_numpy(frame).unsqueeze(0)
     content.data.copy_(frame)
     content = content/255.0
+    pre_tt += time() - tt
+    tt = time()
 
     with torch.no_grad():
         cF = vgg(content)
-        print(cF.shape, sF.shape)
+        torch.cuda.synchronize()
+        vgg_tt += time() - tt
+        tt = time()
         if(opt.layer == 'r41'):
             feature = matrix(cF[opt.layer],sF[opt.layer])
         else:
             feature = matrix(cF,sF)
+        torch.cuda.synchronize()
+        mat_tt += time() - tt
+        tt = time()
         transfer = dec(feature)
+        torch.cuda.synchronize()
+        dec_tt += time() - tt
+        tt = time()
         transfer = transfer.clamp(0,1).squeeze(0)*255
         transfer = transfer.type(torch.uint8).data.cpu().numpy()
         transfer = transfer.transpose((1,2,0))
+        torch.cuda.synchronize()
+        post_tt += time() - tt
 
-        out.write(transfer)
-        cv2.imshow('frame',transfer)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        #out.write(transfer)
+        #cv2.imshow('frame',transfer)
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    break
     i += 1
-    print((time.time()-tt)/i)
+    print(np.array([pre_tt, vgg_tt, mat_tt, dec_tt, post_tt])/i)
 
 # When everything done, release the capture
 out.release()
