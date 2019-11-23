@@ -57,7 +57,6 @@ class MulLayer(nn.Module):
 
         cMean = torch.mean(cFF,dim=2,keepdim=True)
         cMean = cMean.unsqueeze(3)
-        cMean = cMean.expand_as(cF)
         cF = cF - cMean
 
         #sb,sc,sh,sw = sF.size()
@@ -65,9 +64,7 @@ class MulLayer(nn.Module):
         sFF = sF.view(1,256,144*256)
         sMean = torch.mean(sFF,dim=2,keepdim=True)
         sMean = sMean.unsqueeze(3)
-        sMeanC = sMean.expand_as(cF)
-        sMeanS = sMean.expand_as(sF)
-        sF = sF - sMeanS
+        sF = sF - sMean
 
 
         compress_content = self.compress(cF)
@@ -83,7 +80,7 @@ class MulLayer(nn.Module):
             transmatrix = torch.bmm(sMatrix,cMatrix)
             transfeature = torch.bmm(transmatrix,compress_content).view(b,c,h,w)
             out = self.unzip(transfeature.view(b,c,h,w))
-            out = out + sMeanC
+            out = out + sMean
             return out#, transmatrix
         else:
             out = self.unzip(compress_content.view(b,c,h,w))
