@@ -23,5 +23,5 @@ if SAVE_PTH:
 if SAVE_ONNX:
     x = torch.ones(2,3,576,1024).cuda()
     torch.onnx.export(model, x, 'models/onnx/transfer_r31.onnx', verbose=True,
-                        input_names=['input_0'], output_names=['output_0'], opset_version=11)
+                        input_names=['input_0'], output_names=['output_0'])
     print("Saved onnx model")
