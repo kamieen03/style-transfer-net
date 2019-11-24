@@ -21,7 +21,6 @@ class CNN(nn.Module):
 
         # 32x8x8
         self.fc = nn.Linear(matrixSize*matrixSize,matrixSize*matrixSize)
-        #self.fc = nn.Linear(32*64,256*256)
 
     def forward(self,x):
         out = self.convs(x)
@@ -53,16 +52,12 @@ class MulLayer(nn.Module):
 
     def forward(self, cF,sF,trans=True):
         cFBK = cF.clone()
-        #cb,cc,ch,cw = cF.size()
-        #cFF = cF.view(cb,cc,-1) 
         cFF = cF.view(1,256, 144*256)
 
         cMean = torch.mean(cFF,dim=2,keepdim=True)
         cMean = cMean.unsqueeze(3)
         cF = cF - cMean
 
-        #sb,sc,sh,sw = sF.size()
-        #sFF = sF.view(sb,sc,-1)
         sFF = sF.view(1,256,144*256)
         sMean = torch.mean(sFF,dim=2,keepdim=True)
         sMean = sMean.unsqueeze(3)
@@ -70,24 +65,20 @@ class MulLayer(nn.Module):
 
 
         compress_content = self.compress(cF)
-        #b,c,h,w = compress_content.size()
-        #print(3, b,c,h,w)
-        #compress_content = compress_content.view(b,c,-1)
-        compress_content = compress_content.view(1,32,144*256)
+        compress_content = compress_content.view(1,32,-1)
 
         if(trans):
             cMatrix = self.cnet(cF)
             sMatrix = self.snet(sF)
-            print(sMatrix.size())
 
-            sMatrix = sMatrix.view(sMatrix.size(0),self.matrixSize,self.matrixSize)
-            cMatrix = cMatrix.view(cMatrix.size(0),self.matrixSize,self.matrixSize)
+            sMatrix = sMatrix.view(1,self.matrixSize,self.matrixSize) #1-batchSIZE
+            cMatrix = cMatrix.view(1,self.matrixSize,self.matrixSize)
             transmatrix = torch.bmm(sMatrix,cMatrix)
-            transfeature = torch.bmm(transmatrix,compress_content).view(1,256,144,256)
-            out = self.unzip(transfeature.view(b,c,h,w))
+            transfeature = torch.bmm(transmatrix,compress_content).view(1,32,144,256)
+            out = self.unzip(transfeature.view(1,32,144,256))
             out = out + sMean
-            return out#, transmatrix
+            return out
         else:
-            out = self.unzip(compress_content.view(b,c,h,w))
+            out = self.unzip(compress_content.view(1,32,144,256))
             out = out + cMean
             return out
