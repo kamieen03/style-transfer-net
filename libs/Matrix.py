@@ -26,12 +26,14 @@ class CNN(nn.Module):
     def forward(self,x):
         out = self.convs(x)
         # 32x8x8
-        b,c,h,w = out.size()
-        out = out.view(b,c,-1)
+        #b,c,h,w = out.size()
+        #print(1, b,c,h,w)
+        out = out.view(1,32,144*256)
         # 32x64
-        out = torch.bmm(out,out.transpose(1,2)).div(h*w)
+        out = torch.bmm(out,out.transpose(1,2)).div(144*256)
+        #print(2,out.size())
         # 32x32
-        out = out.view(out.size(0),-1)
+        out = out.view(1,-1)
         return self.fc(out)
 
 class MulLayer(nn.Module):
@@ -68,17 +70,20 @@ class MulLayer(nn.Module):
 
 
         compress_content = self.compress(cF)
-        b,c,h,w = compress_content.size()
-        compress_content = compress_content.view(b,c,-1)
+        #b,c,h,w = compress_content.size()
+        #print(3, b,c,h,w)
+        #compress_content = compress_content.view(b,c,-1)
+        compress_content = compress_content.view(1,32,144*256)
 
         if(trans):
             cMatrix = self.cnet(cF)
             sMatrix = self.snet(sF)
+            print(sMatrix.size())
 
             sMatrix = sMatrix.view(sMatrix.size(0),self.matrixSize,self.matrixSize)
             cMatrix = cMatrix.view(cMatrix.size(0),self.matrixSize,self.matrixSize)
             transmatrix = torch.bmm(sMatrix,cMatrix)
-            transfeature = torch.bmm(transmatrix,compress_content).view(b,c,h,w)
+            transfeature = torch.bmm(transmatrix,compress_content).view(1,256,144,256)
             out = self.unzip(transfeature.view(b,c,h,w))
             out = out + sMean
             return out#, transmatrix
