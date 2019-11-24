@@ -54,7 +54,7 @@ for param in matrix.parameters():
 
 ################# GLOBAL VARIABLE #################
 content = torch.Tensor(1,3,576,1024)
-style = torch.Tensor(1,3,256,256)
+style = torch.Tensor(1,3,576,1024)
 
 ################# GPU  #################
 if(opt.cuda):
@@ -71,7 +71,7 @@ cap = cv2.VideoCapture('data/videos/tram.avi')   #assume it's 576x1024 (HxW)
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 out = cv2.VideoWriter('data/videos/out_vid.avi', fourcc, 20.0, (1024,576))
 
-style_tmp = cv2.imread('data/style/27.jpg')
+style_tmp = cv2.imread('data/style/1024x576/27.jpg')
 style_tmp = style_tmp.transpose((2,0,1))
 style_tmp = torch.from_numpy(style_tmp).unsqueeze(0)
 style.data.copy_(style_tmp)
