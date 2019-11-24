@@ -3,4 +3,4 @@
 #$2 - output image
 #$3 - output height
 #$4 - output width
-convert $1 -resample $4x$3 -resize $4x$3 $2
+convert-im6 $1 -resample $4x$3 -resize $4x$3 $2
