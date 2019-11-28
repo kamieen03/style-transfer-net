@@ -4,7 +4,6 @@ import cv2
 import torch
 import numpy as np
 import argparse
-import tensorrt as trt
 import time
 
 from libs.Loader import Dataset
@@ -66,8 +65,6 @@ if(opt.cuda):
     content = content.cuda()
 
 cap = cv2.VideoCapture('data/videos/tram.avi')   #assume it's 576x1024 (HxW)
-#cap.set(3,600)
-#cap.set(4,800)
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 out = cv2.VideoWriter('data/videos/out_vid.avi', fourcc, 20.0, (1024,576))
 
@@ -103,7 +100,7 @@ while(True):
         transfer = transfer.type(torch.uint8).data.cpu().numpy()
         transfer = transfer.transpose((1,2,0))
 
-        out.write(transfer)
+        #out.write(transfer)
         cv2.imshow('frame',transfer)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
