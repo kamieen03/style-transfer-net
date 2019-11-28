@@ -84,16 +84,13 @@ tt = time.time()
 while(True):
     ret, frame = cap.read()
     if not ret: break
-    print(frame.shape)
     frame = frame.transpose((2,0,1))
-    print(frame.shape)
     frame = torch.from_numpy(frame).unsqueeze(0)
     content.data.copy_(frame)
     content = content/255.0
 
     with torch.no_grad():
         cF = vgg(content)
-        print(cF.shape, sF.shape)
         if(opt.layer == 'r41'):
             feature = matrix(cF[opt.layer],sF[opt.layer])
         else:
@@ -102,8 +99,9 @@ while(True):
         transfer = transfer.clamp(0,1).squeeze(0)*255
         transfer = transfer.type(torch.uint8).data.cpu().numpy()
         transfer = transfer.transpose((1,2,0))
+        print(transfer.shape, transfer.size)
 
-        out.write(transfer)
+        #out.write(transfer)
         cv2.imshow('frame',transfer)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

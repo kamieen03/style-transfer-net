@@ -54,30 +54,27 @@ import pycuda.autoinit
 from PIL import Image
 import numpy as np
 
+import torch
+from torchvision import transforms, datasets
+
+                                            
 # Returns a numpy buffer of shape (num_images, 1, 28, 28)
-def load_mnist_data(filepath):
-    with open(filepath, "rb") as f:
-        raw_buf = np.fromstring(f.read(), dtype=np.uint8)
-    # Make sure the magic number is what we expect
-    assert raw_buf[0:4].view(">i4")[0] == 2051
-    num_images = raw_buf[4:8].view(">i4")[0]
-    image_c = 1
-    image_h = raw_buf[8:12].view(">i4")[0]
-    image_w = raw_buf[12:16].view(">i4")[0]
-    # Need to scale all values to the range of [0, 1]
-    return np.ascontiguousarray((raw_buf[16:] / 255.0).astype(np.float32).reshape(num_images, image_c, image_h, image_w))
+def load_datasets():
+    tr = transforms.Compose([
+            transforms.Resize(1024,576),
+            transforms.ToTensor()
+        ])
 
-# Returns a numpy buffer of shape (num_images)
-def load_mnist_labels(filepath):
-    with open(filepath, "rb") as f:
-        raw_buf = np.fromstring(f.read(), dtype=np.uint8)
-    # Make sure the magic number is what we expect
-    assert raw_buf[0:4].view(">i4")[0] == 2049
-    num_labels = raw_buf[4:8].view(">i4")[0]
-    return np.ascontiguousarray(raw_buf[8:].astype(np.int32).reshape(num_labels))
+    content_dataset = datasets.ImageFolder(root='../data/mscoco/train/', transform=tr)
+    content_loader = torch.utils.data.DataLoader(content_dataset, batch_size=8)
+    style_dataset = datasets.ImageFolder(root='../data/wikiart/train/', transform=tr)
+    style_loader = torch.utils.data.DataLoader(style_dataset, batch_size=8)
+    return content_loader, style_loader
+    #return np.ascontiguousarray((raw_buf[16:] / 255.0).astype(np.float32).reshape(num_images, image_c, image_h, image_w))
 
-class MNISTEntropyCalibrator(trt.IInt8EntropyCalibrator2):
-    def __init__(self, training_data, cache_file, batch_size=64):
+
+class TransferEntropyCalibrator(trt.IInt8EntropyCalibrator2):
+    def __init__(self, training_data, cache_file, batch_size=16):
         # Whenever you specify a custom constructor for a TensorRT class,
         # you MUST call the constructor of the parent explicitly.
         trt.IInt8EntropyCalibrator2.__init__(self)
@@ -85,12 +82,12 @@ class MNISTEntropyCalibrator(trt.IInt8EntropyCalibrator2):
         self.cache_file = cache_file
 
         # Every time get_batch is called, the next batch of size batch_size will be copied to the device and returned.
-        self.data = load_mnist_data(training_data)
+        self.content_loader, self.style_loader = load_datasets()
         self.batch_size = batch_size
         self.current_index = 0
 
         # Allocate enough memory for a whole batch.
-        self.device_input = cuda.mem_alloc(self.data[0].nbytes * self.batch_size)
+        self.device_input = cuda.mem_alloc(3*1024*576*4 * self.batch_size)
 
     def get_batch_size(self):
         return self.batch_size
@@ -99,6 +96,15 @@ class MNISTEntropyCalibrator(trt.IInt8EntropyCalibrator2):
     # You don't necessarily have to use them, but they can be useful to understand the order of
     # the inputs. The bindings list is expected to have the same ordering as 'names'.
     def get_batch(self, names):
+        dataloader_iterator = iter(dataloader)
+    for i in range(iterations):
+        try:
+            data, target = next(dataloader_iterator)
+        except StopIteration:
+            dataloader_iterator = iter(dataloader)
+            data, target = next(dataloader_iterator)
+        do_something()
+        
         if self.current_index + self.batch_size > self.data.shape[0]:
             return None
 

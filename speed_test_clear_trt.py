@@ -8,7 +8,7 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 
-VISUAL = False
+VISUAL = True
 
 VGG_PATH = 'models/trt/vgg_r31.trt'
 MATRIX_PATH = 'models/trt/matrix_r31.trt'
