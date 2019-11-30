@@ -76,7 +76,7 @@ def load_datasets(batch_size):
 
 
 class TransferEntropyCalibrator(trt.IInt8EntropyCalibrator2):
-    def __init__(self, training_data, cache_file, batch_size=16):
+    def __init__(self, cache_file, batch_size=16):
         # Whenever you specify a custom constructor for a TensorRT class,
         # you MUST call the constructor of the parent explicitly.
         trt.IInt8EntropyCalibrator2.__init__(self)
@@ -89,7 +89,8 @@ class TransferEntropyCalibrator(trt.IInt8EntropyCalibrator2):
         self.current_index = 0
 
         # Allocate enough memory for a whole batch.
-        self.device_input = cuda.mem_alloc(2*3*1024*576*4 * self.batch_size)
+        self.content_buffer = cuda.mem_alloc(3*1024*576*4 * self.batch_size)
+        self.style_buffer = cuda.mem_alloc(3*1024*576*4 * self.batch_size)
 
     def get_batch_size(self):
         return self.batch_size
@@ -98,26 +99,15 @@ class TransferEntropyCalibrator(trt.IInt8EntropyCalibrator2):
     # You don't necessarily have to use them, but they can be useful to understand the order of
     # the inputs. The bindings list is expected to have the same ordering as 'names'.
     def get_batch(self, names):
-        for i in range(iterations):
-            try:
-                content = next(self.content_iter)
-                style = next(self.style_iter)
-            except StopIteration:
-                dataloader_iterator = iter(dataloader)
-                data, target = next(dataloader_iterator)
-            do_something()
-        
-        if self.current_index + self.batch_size > self.data.shape[0]:
-            return None
-
-        current_batch = int(self.current_index / self.batch_size)
-        if current_batch % 10 == 0:
-            print("Calibrating batch {:}, containing {:} images".format(current_batch, self.batch_size))
-
-        batch = self.data[self.current_index:self.current_index + self.batch_size].ravel()
-        cuda.memcpy_htod(self.device_input, batch)
-        self.current_index += self.batch_size
-        return [self.device_input]
+        print(names)
+        try:
+            content = next(self.content_iter).numpy().ravel()
+            style = next(self.style_iter).numpy().ravel()
+        except StopIteration:
+            return None, None
+        cuda.memcpy_htod(self.content_buffer, content)
+        cuda.memcpy_htod(self.style_buffer, style)
+        return [self.content_buffer, self.style_buffer]
 
     def read_calibration_cache(self):
         # If there is a cache, use it instead of calibrating again. Otherwise, implicitly return None.
