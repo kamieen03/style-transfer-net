@@ -19,7 +19,7 @@ CROP_SIZE = 256
 VGG_SAVE_PATH = 'models/pruned/vgg_r31.pth'
 MATRIX_SAVE_PATH = 'models/pruned/matrix_r31.pth'
 DECODER_SAVE_PATH = 'models/pruned/dec_r31.pth'
-EPOCHS = 20
+EPOCHS = 6
 
 class Compressor(object):
     def __init__(self):
@@ -31,9 +31,9 @@ class Compressor(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/train', datapath+'wikiart/train')
+            datapath+'mscoco/small', datapath+'wikiart/small')
         self.content_valid, self.style_valid = self.load_datasets(
-            datapath+'mscoco/validate', datapath+'wikiart/validate')
+            datapath+'mscoco/small', datapath+'wikiart/small')
 
         # set up model and loss network
         self.model = Transfer3()
@@ -105,7 +105,7 @@ class Compressor(object):
             self.optimizer.step()
             self.compression_scheduler.on_minibatch_end(epoch, batch_i, batch_num, self.optimizer)
             print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
-                  f'Batch: [{batch_i}/{batch_num}] ' +
+                  f'Batch: [{batch_i+1}/{batch_num}] ' +
                   f'Loss: {loss:.4f} contentLoss: {10000*content_loss:.4f} styleLoss: {style_loss:.4f}')
 
     def validate_single_epoch(self, epoch):
