@@ -16,13 +16,17 @@ from libs.Criterion import LossCriterion
 
 BATCH_SIZE = 2 
 CROP_SIZE = 256
-MODEL_SAVE_PATH = 'models/transfer3_pruned.pth'
+VGG_SAVE_PATH = 'models/pruned/vgg_r31.pth'
+MATRIX_SAVE_PATH = 'models/pruned/matrix_r31.pth'
+DECODER_SAVE_PATH = 'models/pruned/dec_r31.pth'
 EPOCHS = 20
 
 class Compressor(object):
     def __init__(self):
         datapath = '../data/'
-        model_path = 'models/transfer_r31.pth'
+        vgg_path = 'models/vgg_r31.pth'
+        matrix_path = 'models/r31.pth'
+        decoder_path = 'models/dec_r31.pth'
         compression_schedule_path = 'prune/schedule.yaml'
 
         # set up datasets
@@ -33,7 +37,9 @@ class Compressor(object):
 
         # set up model and loss network
         self.model = Transfer3()
-        self.model.load_state_dict(torch.load(model_path))
+        self.model.vgg.load_state_dict(torch.load(vgg_path))
+        self.model.matrix.load_state_dict(torch.load(matrix_path))
+        self.model.dec.load_state_dict(torch.load(decoder_path))
         self.model.train()
         self.model.cuda()
         self.loss_module = encoder5()
@@ -74,7 +80,9 @@ class Compressor(object):
             self.train_single_epoch(epoch)
             self.validate_single_epoch(epoch)
             self.compression_scheduler.on_epoch_end(epoch)
-            torch.save(self.model.state_dict(), MODEL_SAVE_PATH)
+            torch.save(self.model.vgg.state_dict(), VGG_SAVE_PATH)
+            torch.save(self.model.matrix.state_dict(), MATRIX_SAVE_PATH)
+            torch.save(self.model.dec.state_dict(), DECODER_SAVE_PATH)
 
     def train_single_epoch(self, epoch):
         batch_num = len(self.content_train)      # number of batches in training epoch
