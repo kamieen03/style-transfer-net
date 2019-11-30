@@ -14,10 +14,9 @@ class Transfer3(torch.nn.Module):
 
 
     def forward(self, content, style=None): 
+        sF = self.vgg(style)
         cF = self.vgg(content)
-        if style is not None:
-            self.sF = self.vgg(style)
-        cF = self.matrix(cF, self.sF)
+        cF = self.matrix(cF, sF)
         cF = self.dec(cF)
         return cF
 
