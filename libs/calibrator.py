@@ -59,17 +59,19 @@ from torchvision import transforms, datasets
 
                                             
 # Returns a numpy buffer of shape (num_images, 1, 28, 28)
-def load_datasets():
+def load_datasets(batch_size):
     tr = transforms.Compose([
             transforms.Resize(1024,576),
             transforms.ToTensor()
         ])
 
     content_dataset = datasets.ImageFolder(root='../data/mscoco/train/', transform=tr)
-    content_loader = torch.utils.data.DataLoader(content_dataset, batch_size=8)
+    content_loader = torch.utils.data.DataLoader(content_dataset, batch_size=batch_size)
+    content_iter = iter(content_loader)
     style_dataset = datasets.ImageFolder(root='../data/wikiart/train/', transform=tr)
-    style_loader = torch.utils.data.DataLoader(style_dataset, batch_size=8)
-    return content_loader, style_loader
+    style_loader = torch.utils.data.DataLoader(style_dataset, batch_size=batch_size)
+    style_iter = iter(style_loader)
+    return content_iter, style_iter
     #return np.ascontiguousarray((raw_buf[16:] / 255.0).astype(np.float32).reshape(num_images, image_c, image_h, image_w))
 
 
@@ -82,12 +84,12 @@ class TransferEntropyCalibrator(trt.IInt8EntropyCalibrator2):
         self.cache_file = cache_file
 
         # Every time get_batch is called, the next batch of size batch_size will be copied to the device and returned.
-        self.content_loader, self.style_loader = load_datasets()
+        self.content_iter, self.style_iter = load_datasets(batch_size)
         self.batch_size = batch_size
         self.current_index = 0
 
         # Allocate enough memory for a whole batch.
-        self.device_input = cuda.mem_alloc(3*1024*576*4 * self.batch_size)
+        self.device_input = cuda.mem_alloc(2*3*1024*576*4 * self.batch_size)
 
     def get_batch_size(self):
         return self.batch_size
@@ -96,14 +98,14 @@ class TransferEntropyCalibrator(trt.IInt8EntropyCalibrator2):
     # You don't necessarily have to use them, but they can be useful to understand the order of
     # the inputs. The bindings list is expected to have the same ordering as 'names'.
     def get_batch(self, names):
-        dataloader_iterator = iter(dataloader)
-    for i in range(iterations):
-        try:
-            data, target = next(dataloader_iterator)
-        except StopIteration:
-            dataloader_iterator = iter(dataloader)
-            data, target = next(dataloader_iterator)
-        do_something()
+        for i in range(iterations):
+            try:
+                content = next(self.content_iter)
+                style = next(self.style_iter)
+            except StopIteration:
+                dataloader_iterator = iter(dataloader)
+                data, target = next(dataloader_iterator)
+            do_something()
         
         if self.current_index + self.batch_size > self.data.shape[0]:
             return None
