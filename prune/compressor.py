@@ -7,6 +7,7 @@ import time
 import torch.optim
 import torch.utils.data
 import torch.optim as optim
+import copy
 import distiller
 
 from libs.Transfer import Transfer3
@@ -78,7 +79,7 @@ class Compressor(object):
         for epoch in range(1, EPOCHS+1): # count from one
             self.compression_scheduler.on_epoch_begin(epoch)
             self.train_single_epoch(epoch)
-            self.validate_single_epoch(epoch)
+    #        self.validate_single_epoch(epoch)
             self.compression_scheduler.on_epoch_end(epoch)
             torch.save(self.model.vgg.state_dict(), VGG_SAVE_PATH)
             torch.save(self.model.matrix.state_dict(), MATRIX_SAVE_PATH)
@@ -91,9 +92,10 @@ class Compressor(object):
         for batch_i, (content, style) in enumerate(zip(self.content_train, self.style_train)):
             self.compression_scheduler.on_minibatch_begin(epoch, batch_i, batch_num, self.optimizer)
             content, style = content[0].cuda(), style[0].cuda()
+            inp = torch.cat((content.unsqueeze(0), style.unsqueeze(0)))
 
             self.optimizer.zero_grad()
-            transfer = self.model(content, style)
+            transfer = self.model(inp)
 
             sF_loss = self.loss_module(style)
             cF_loss = self.loss_module(content)
@@ -121,7 +123,7 @@ class Compressor(object):
             loss, style_loss, content_loss = self.criterion(tF,sF_loss,cF_loss)
 
             print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
-                  f'Batch: [{batch_i}/{batch_num}] ' +
+                  f'Batch: [{batch_i+1}/{batch_num}] ' +
                   f'Loss: {loss:.4f} contentLoss: {10000*content_loss:.4f} styleLoss: {style_loss:.4f}')
 
 

@@ -10,12 +10,11 @@ class Transfer3(torch.nn.Module):
         self.vgg = encoder3()
         self.matrix = MulLayer(layer='r31')
         self.dec = decoder3()
-        self.sF = None
 
-
-    def forward(self, content, style=None): 
-        sF = self.vgg(style)
-        cF = self.vgg(content)
+    def forward(self, inp): 
+        # assuming inp is 5D tensor (2,B,C,H,W)
+        cF = self.vgg(inp[0])
+        sF = self.vgg(inp[1])
         cF = self.matrix(cF, sF)
         cF = self.dec(cF)
         return cF
