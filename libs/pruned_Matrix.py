@@ -6,18 +6,18 @@ class CNN(nn.Module):
         super(CNN,self).__init__()
         if(layer == 'r31'):
             # 256x64x64
+            self.convs = nn.Sequential(nn.Conv2d(128,64,3,1,1),
+                                       nn.ReLU(inplace=True),
+                                       nn.Conv2d(64,32,3,1,1),
+                                       nn.ReLU(inplace=True),
+                                       nn.Conv2d(32,matrixSize,3,1,1))
+        elif(layer == 'r41'):
+            # 512x32x32
             self.convs = nn.Sequential(nn.Conv2d(256,128,3,1,1),
                                        nn.ReLU(inplace=True),
                                        nn.Conv2d(128,64,3,1,1),
                                        nn.ReLU(inplace=True),
                                        nn.Conv2d(64,matrixSize,3,1,1))
-        elif(layer == 'r41'):
-            # 512x32x32
-            self.convs = nn.Sequential(nn.Conv2d(512,256,3,1,1),
-                                       nn.ReLU(inplace=True),
-                                       nn.Conv2d(256,128,3,1,1),
-                                       nn.ReLU(inplace=True),
-                                       nn.Conv2d(128,matrixSize,3,1,1))
 
         # 32x8x8
         self.fc = nn.Linear(matrixSize*matrixSize,matrixSize*matrixSize)
@@ -42,11 +42,11 @@ class MulLayer(nn.Module):
         self.matrixSize = matrixSize
 
         if(layer == 'r41'):
-            self.compress = nn.Conv2d(512,matrixSize,1,1,0)
-            self.unzip = nn.Conv2d(matrixSize,512,1,1,0)
-        elif(layer == 'r31'):
             self.compress = nn.Conv2d(256,matrixSize,1,1,0)
             self.unzip = nn.Conv2d(matrixSize,256,1,1,0)
+        elif(layer == 'r31'):
+            self.compress = nn.Conv2d(128,matrixSize,1,1,0)
+            self.unzip = nn.Conv2d(matrixSize,128,1,1,0)
         self.transmatrix = None
 
     def forward(self, cF,sF,trans=True):

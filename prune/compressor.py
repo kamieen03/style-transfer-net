@@ -17,7 +17,8 @@ from libs.Criterion import LossCriterion
 
 BATCH_SIZE = 2 
 CROP_SIZE = 256
-VGG_SAVE_PATH = 'models/pruned/vgg_r31.pth'
+VGG_C_SAVE_PATH = 'models/pruned/vgg_c_r31.pth'
+VGG_S_SAVE_PATH = 'models/pruned/vgg_s_r31.pth'
 MATRIX_SAVE_PATH = 'models/pruned/matrix_r31.pth'
 DECODER_SAVE_PATH = 'models/pruned/dec_r31.pth'
 EPOCHS = 6
@@ -38,7 +39,8 @@ class Compressor(object):
 
         # set up model and loss network
         self.model = Transfer3()
-        self.model.vgg.load_state_dict(torch.load(vgg_path))
+        self.model.vgg_c.load_state_dict(torch.load(vgg_path))
+        self.model.vgg_s.load_state_dict(torch.load(vgg_path))
         self.model.matrix.load_state_dict(torch.load(matrix_path))
         self.model.dec.load_state_dict(torch.load(decoder_path))
         self.model.train()
@@ -52,7 +54,7 @@ class Compressor(object):
                                   content_layers=['r31'],
                                   style_weight=0.02,
                                   content_weight=1.0)
-        self.optimizer = optim.Adam(self.model.parameters(), 1e-4)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4)
 
         # set up compression scheduler
         self.compression_scheduler = distiller.file_config(self.model, self.optimizer,
@@ -79,9 +81,10 @@ class Compressor(object):
         for epoch in range(1, EPOCHS+1): # count from one
             self.compression_scheduler.on_epoch_begin(epoch)
             self.train_single_epoch(epoch)
-    #        self.validate_single_epoch(epoch)
+            self.validate_single_epoch(epoch)
             self.compression_scheduler.on_epoch_end(epoch)
-            torch.save(self.model.vgg.state_dict(), VGG_SAVE_PATH)
+            torch.save(self.model.vgg_c.state_dict(), VGG_C_SAVE_PATH)
+            torch.save(self.model.vgg_s.state_dict(), VGG_S_SAVE_PATH)
             torch.save(self.model.matrix.state_dict(), MATRIX_SAVE_PATH)
             torch.save(self.model.dec.state_dict(), DECODER_SAVE_PATH)
 
@@ -92,7 +95,7 @@ class Compressor(object):
         for batch_i, (content, style) in enumerate(zip(self.content_train, self.style_train)):
             self.compression_scheduler.on_minibatch_begin(epoch, batch_i, batch_num, self.optimizer)
             content, style = content[0].cuda(), style[0].cuda()
-            inp = torch.cat((content.unsqueeze(0), style.unsqueeze(0)))
+            inp = torch.cat((content, style),dim=1)
 
             self.optimizer.zero_grad()
             transfer = self.model(inp)
@@ -116,7 +119,8 @@ class Compressor(object):
 
         for batch_i, (content, style) in enumerate(zip(self.content_valid, self.style_valid)):
             content, style = content[0].cuda(), style[0].cuda()
-            transfer = self.model(content, style)
+            inp = torch.cat((content, style),dim=1)
+            transfer = self.model(inp)
             sF_loss = self.loss_module(style)
             cF_loss = self.loss_module(content)
             tF = self.loss_module(transfer)
