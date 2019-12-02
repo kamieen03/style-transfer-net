@@ -21,7 +21,7 @@ VGG_C_SAVE_PATH = 'models/pruned/vgg_c_r31.pth'
 VGG_S_SAVE_PATH = 'models/pruned/vgg_s_r31.pth'
 MATRIX_SAVE_PATH = 'models/pruned/matrix_r31.pth'
 DECODER_SAVE_PATH = 'models/pruned/dec_r31.pth'
-EPOCHS = 6
+EPOCHS = 30
 
 class Compressor(object):
     def __init__(self):
@@ -33,9 +33,9 @@ class Compressor(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/small', datapath+'wikiart/small')
+            datapath+'mscoco/train', datapath+'wikiart/validate')
         self.content_valid, self.style_valid = self.load_datasets(
-            datapath+'mscoco/small', datapath+'wikiart/small')
+            datapath+'mscoco/train', datapath+'wikiart/validate')
 
         # set up model and loss network
         self.model = Transfer3()

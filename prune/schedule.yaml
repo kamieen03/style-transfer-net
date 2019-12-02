@@ -55,22 +55,22 @@ policies:
   - pruner:
       instance_name : filter_pruner
     starting_epoch: 1
-    ending_epoch: 4
+    ending_epoch: 20
     frequency: 1
   - pruner:
       instance_name : unzip_pruner
     starting_epoch: 1
-    ending_epoch: 4
+    ending_epoch: 20
     frequency: 1
 
 # After completeing the pruning, we perform network thinning and continue fine-tuning.
   - extension:
       instance_name: net_thinner
-    epochs: [5]
+    epochs: [21]
 
 
   - lr_scheduler:
       instance_name: pruning_lr
-    starting_epoch: 6
-    ending_epoch: 6
+    starting_epoch: 22
+    ending_epoch: 30
     frequency: 1
