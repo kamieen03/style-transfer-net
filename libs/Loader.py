@@ -11,11 +11,12 @@ def default_loader(path):
 
 
 class Dataset(data.Dataset):
-    def __init__(self,dataPath,loadSize,fineSize,test=False,video=False):
+    def __init__(self,dataPath,fineSize,test=False,video=False):
         super(Dataset,self).__init__()
         self.dataPath = dataPath
         self.image_list = [x for x in os.listdir(dataPath) if is_image_file(x)]
         self.image_list = sorted(self.image_list)
+        print(self.image_list)
         if(video):
             self.image_list = sorted(self.image_list)
 
@@ -25,8 +26,7 @@ class Dataset(data.Dataset):
 
         if not test:
             self.transform = transforms.Compose([
-            		         transforms.Resize(fineSize),
-            		         transforms.RandomCrop(fineSize),
+            		         transforms.Resize((fineSize,fineSize)),
                              transforms.RandomHorizontalFlip(),
             		         transforms.ToTensor()])
         else:
