@@ -34,9 +34,9 @@ class Compressor(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/train', datapath+'wikiart/validate')
+            datapath+'mscoco/train', datapath+'wikiart/train')
         self.content_valid, self.style_valid = self.load_datasets(
-            datapath+'mscoco/train', datapath+'wikiart/validate')
+            datapath+'mscoco/validate', datapath+'wikiart/validate')
 
         # set up model and loss network
         self.model = Transfer3()
