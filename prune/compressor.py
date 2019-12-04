@@ -9,6 +9,7 @@ import torch.utils.data
 import torch.optim as optim
 import copy
 import distiller
+import cv2
 
 from libs.Transfer import Transfer3
 from libs.models import encoder5
@@ -63,13 +64,13 @@ class Compressor(object):
 
     def load_datasets(self, content_path, style_path):
         """Load the datasets"""
-        content_dataset = Dataset(content_path, 300, CROP_SIZE)  #300 isnt used anyway
+        content_dataset = Dataset(content_path, 256)  #300 isnt used anyway
         content_loader = torch.utils.data.DataLoader(dataset     = content_dataset,
                                                      batch_size  = BATCH_SIZE,
                                                      shuffle     = True,
                                                      num_workers = 3,
                                                      drop_last   = True)
-        style_dataset = Dataset(style_path, 300, CROP_SIZE) 
+        style_dataset = Dataset(style_path, 256) 
         style_loader = torch.utils.data.DataLoader(dataset     = style_dataset,
                                                    batch_size  = BATCH_SIZE,
                                                    shuffle     = True,
