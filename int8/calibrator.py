@@ -118,3 +118,39 @@ class TransferEntropyCalibrator(trt.IInt8EntropyCalibrator2):
     def write_calibration_cache(self, cache):
         with open(self.cache_file, "wb") as f:
             f.write(cache)
+
+class AbstractEntropyCalibrator(trt.IInt8EntropyCalibrator2):
+    def __init__(self, cache_file, batch_size=16):
+        trt.IInt8EntropyCalibrator2.__init__(self)
+
+        self.cache_file = cache_file
+        self.content_iter, self.style_iter = load_datasets(batch_size)
+        self.batch_size = batch_size
+
+    def get_batch_size(self):
+        return self.batch_size
+
+    def read_calibration_cache(self):
+        if os.path.exists(self.cache_file):
+            with open(self.cache_file, "rb") as f:
+                return f.read()
+
+    def write_calibration_cache(self, cache):
+        with open(self.cache_file, "wb") as f:
+            f.write(cache)
+
+
+class EncoderEntropyCalibrator(trt.IInt8EntropyCalibrator2):
+    def __init__(self, cache_file, batch_size=16):
+        AbstractEntropyCalibrator.__init__(self, cache_file, batch_size)
+        self.content_buffer = cuda.mem_alloc(3*1024*576*4 * self.batch_size)
+
+    def get_batch(self, names):
+        print(names)
+        try:
+            content = next(self.content_iter).numpy().ravel()
+        except StopIteration:
+            return None, None
+        cuda.memcpy_htod(self.content_buffer, content)
+        return [self.content_buffer]
+

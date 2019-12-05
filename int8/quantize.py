@@ -1,4 +1,5 @@
-#
+#!/usr/bin/env python3
+
 # Copyright 1993-2019 NVIDIA Corporation.  All rights reserved.
 #
 # NOTICE TO LICENSEE:
@@ -55,12 +56,12 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 
-from calibrator import TransferEntropyCalibrator
+from calibrator import EncoderEntropyCalibrator
 
 
 VISUAL = True
 
-VGG_PATH = 'models/trt/vgg_r31.trt'
+VGG_PATH = 'models/onnx/decoder_r1.onnx'
 MATRIX_PATH = 'models/trt/matrix_r31.trt'
 DECODER_PATH = 'models/trt/decoder_r31.trt'
 STYLE_PATH = 'data/style/1024x576/27.jpg'
@@ -158,67 +159,59 @@ def loop_inference(h_content, d_content, h_style, d_style,
     cv2.destroyAllWindows()
 
 
-def main():
-    # deserialize trt engines
-    global vgg_engine, matrix_engine, decoder_engine
-    with trt.Runtime(TRT_LOGGER) as runtime:
-        with open(VGG_PATH, 'rb') as f:
-            vgg_engine = runtime.deserialize_cuda_engine(f.read())
-        with open(MATRIX_PATH, 'rb') as f:
-            matrix_engine = runtime.deserialize_cuda_engine(f.read())
-        with open(DECODER_PATH, 'rb') as f:
-            decoder_engine = runtime.deserialize_cuda_engine(f.read())
-
-    # allocate buffers
-    h_content, d_content, h_style, d_style, h_vgg_content_out, d_vgg_content_out, \
-    h_vgg_style_out, d_vgg_style_out, h_matrix_out, d_matrix_out, \
-    h_decoder_out, d_decoder_out, stream = allocate_buffers(vgg_engine, matrix_engine, decoder_engine)
-
-    # encode style features, placing them in GPU memory
-    style_tmp = cv2.imread(STYLE_PATH)
-    style_img = load_normalized_test_case(style_tmp, h_style)
-    cuda.memcpy_htod_async(d_style, h_style, stream)
-    with vgg_engine.create_execution_context() as context:
-        context.execute_async(bindings=[int(d_style), int(d_vgg_style_out)], stream_handle=stream.handle)
-
-    # run inference on all video frames consecutively
-    loop_inference(h_content, d_content, h_style, d_style,
-            h_vgg_content_out, d_vgg_content_out, h_vgg_style_out, d_vgg_style_out,
-            h_matrix_out, d_matrix_out, h_decoder_out, d_decoder_out, stream)
-
-if __name__ == '__main__':
-    main()
+#def main():
+#    # deserialize trt engines
+#    global vgg_engine, matrix_engine, decoder_engine
+#    with trt.Runtime(TRT_LOGGER) as runtime:
+#        with open(VGG_PATH, 'rb') as f:
+#            vgg_engine = runtime.deserialize_cuda_engine(f.read())
+#        with open(MATRIX_PATH, 'rb') as f:
+#            matrix_engine = runtime.deserialize_cuda_engine(f.read())
+#        with open(DECODER_PATH, 'rb') as f:
+#            decoder_engine = runtime.deserialize_cuda_engine(f.read())
+#
+#    # allocate buffers
+#    h_content, d_content, h_style, d_style, h_vgg_content_out, d_vgg_content_out, \
+#    h_vgg_style_out, d_vgg_style_out, h_matrix_out, d_matrix_out, \
+#    h_decoder_out, d_decoder_out, stream = allocate_buffers(vgg_engine, matrix_engine, decoder_engine)
+#
+#    # encode style features, placing them in GPU memory
+#    style_tmp = cv2.imread(STYLE_PATH)
+#    style_img = load_normalized_test_case(style_tmp, h_style)
+#    cuda.memcpy_htod_async(d_style, h_style, stream)
+#    with vgg_engine.create_execution_context() as context:
+#        context.execute_async(bindings=[int(d_style), int(d_vgg_style_out)], stream_handle=stream.handle)
+#
+#    # run inference on all video frames consecutively
+#    loop_inference(h_content, d_content, h_style, d_style,
+#            h_vgg_content_out, d_vgg_content_out, h_vgg_style_out, d_vgg_style_out,
+#            h_matrix_out, d_matrix_out, h_decoder_out, d_decoder_out, stream)
 
 
 
-# This function builds an engine from a Caffe model.
+
 def build_int8_encoder(deploy_file, model_file, calib, batch_size=32):
     with trt.Builder(TRT_LOGGER) as builder, builder.create_network() as network, trt.OnnxParser(network, TRT_LOGGER) as parser:
-        # We set the builder batch size to be the same as the calibrator's, as we use the same batches
-        # during inference. Note that this is not required in general, and inference batch size is
-        # independent of calibration batch size.
         builder.max_batch_size = batch_size
         builder.max_workspace_size = common.GiB(2)
         builder.int8_mode = True
         builder.int8_calibrator = calib
-        # Parse Caffe model
         with open(VGG_PATH, 'rb') as model:
             parser.parse(model.read())
-        # Build engine and do int8 calibration.
+        print(1)
         return builder.build_cuda_engine(network)
 
 
 def main():
-    # Now we create a calibrator and give it the location of our calibration data.
-    # We also allow it to cache calibration data for faster engine building.
-    batch_size = 8
-    calibration_cache = "calibration_cache/decoder_r31.txt"
-    calib = TransferEntropyCalibrator(test_set, calibration_cache, 8)
+    batch_size = 2
+    print('a')
+    calibration_cache = "calibration_cache/encoder_r31.txt"
+    calib = EncoderEntropyCalibrator(calibration_cache, batch_size)
 
     # Inference batch size can be different from calibration batch size.
-    with build_int8_engine(deploy_file, model_file, calib, batch_size) as engine, engine.create_execution_context() as context:
-        # Batch size for inference can be different than batch size used for calibration.
-        check_accuracy(context, batch_size, test_set=load_mnist_data(test_set), test_labels=load_mnist_labels(test_labels))
+    with build_int8_engine(deploy_file, model_file, calib, batch_size) as engine:
+        with open('models/trt/encoder_r31_int8.engine', 'wb') as f:
+            f.write(engine.serialize())
 
 if __name__ == '__main__':
     main()
