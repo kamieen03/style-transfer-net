@@ -7,19 +7,36 @@ import argparse
 import tensorrt as trt
 from time import time
 from torchsummary import summary
+import sys
 
 from libs.Loader import Dataset
-from libs.pruned_Matrix import MulLayer
 from libs.utils import makeVideo
 import torch.backends.cudnn as cudnn
-from libs.pruned_models import encoder3
-from libs.pruned_models import decoder3
 from libs import Transfer
 import torchvision.transforms as transforms
 
-VGG_PATH    = 'models/pruned/vgg_c_r31.pth'
-DEC_PATH    = 'models/pruned/dec_r31.pth'
-MATRIX_PATH = 'models/pruned/matrix_r31.pth'
+PRUNED = False
+if len(sys.argv) > 1 and sys.argv[1] == '-p':
+    PRUNED = True
+
+if PRUNED:
+    from libs.pruned_models import encoder3
+    from libs.pruned_models import decoder3
+    from libs.pruned_Matrix import MulLayer
+else:
+    from libs.models import encoder3
+    from libs.models import decoder3
+    from libs.Matrix import MulLayer
+
+
+if PRUNED:
+    VGG_PATH    = 'models/pruned/vgg_c_r31.pth'
+    DEC_PATH    = 'models/pruned/dec_r31.pth'
+    MATRIX_PATH = 'models/pruned/matrix_r31.pth'
+else:
+    VGG_PATH    = 'models/vgg_r31.pth'
+    DEC_PATH    = 'models/dec_r31.pth'
+    MATRIX_PATH = 'models/r31.pth'
 
 STYLE_PATH  = 'data/style/27.jpg'
 LAYER = 'r31'
