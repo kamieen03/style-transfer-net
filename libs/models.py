@@ -478,9 +478,8 @@ class encoder5(nn.Module):
         out = self.reflecPad1(out)
         out = self.conv2(out)
         output['r11'] = self.relu2(out)
-        out = self.reflecPad7(output['r11'])
 
-        #out = self.reflecPad3(output['r11'])
+        out = self.reflecPad3(output['r11'])
         out = self.conv3(out)
         output['r12'] = self.relu3(out)
 
@@ -488,9 +487,8 @@ class encoder5(nn.Module):
         out = self.reflecPad4(output['p1'])
         out = self.conv4(out)
         output['r21'] = self.relu4(out)
-        out = self.reflecPad7(output['r21'])
 
-        #out = self.reflecPad5(output['r21'])
+        out = self.reflecPad5(output['r21'])
         out = self.conv5(out)
         output['r22'] = self.relu5(out)
 
