@@ -48,6 +48,7 @@
 
 import tensorrt as trt
 import os
+import sys
 
 import pycuda.driver as cuda
 import pycuda.autoinit
@@ -56,19 +57,24 @@ import numpy as np
 
 import torch
 from torchvision import transforms, datasets
+sys.path.append(os.path.abspath(__file__ + "/../../"))
+from libs.models import encoder3, decoder3
+from libs.Matrix import MulLayer
+
+TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)
 
                                             
 # Returns a numpy buffer of shape (num_images, 1, 28, 28)
-def load_datasets(batch_size):
+def load_datasets(batch_size, H, W):
     tr = transforms.Compose([
-            transforms.Resize(1024,576),
+            transforms.Resize((H, W)),
             transforms.ToTensor()
         ])
 
-    content_dataset = datasets.ImageFolder(root='../data/mscoco/train/', transform=tr)
+    content_dataset = datasets.ImageFolder(root='../data/mscoco/', transform=tr)
     content_loader = torch.utils.data.DataLoader(content_dataset, batch_size=batch_size)
     content_iter = iter(content_loader)
-    style_dataset = datasets.ImageFolder(root='../data/wikiart/train/', transform=tr)
+    style_dataset = datasets.ImageFolder(root='../data/wikiart/', transform=tr)
     style_loader = torch.utils.data.DataLoader(style_dataset, batch_size=batch_size)
     style_iter = iter(style_loader)
     return content_iter, style_iter
@@ -120,11 +126,11 @@ class TransferEntropyCalibrator(trt.IInt8EntropyCalibrator2):
             f.write(cache)
 
 class AbstractEntropyCalibrator(trt.IInt8EntropyCalibrator2):
-    def __init__(self, cache_file, batch_size=16):
+    def __init__(self, cache_file, H, W, batch_size = 8):
         trt.IInt8EntropyCalibrator2.__init__(self)
 
         self.cache_file = cache_file
-        self.content_iter, self.style_iter = load_datasets(batch_size)
+        self.content_iter, self.style_iter = load_datasets(batch_size, H, W)
         self.batch_size = batch_size
 
     def get_batch_size(self):
@@ -136,21 +142,84 @@ class AbstractEntropyCalibrator(trt.IInt8EntropyCalibrator2):
                 return f.read()
 
     def write_calibration_cache(self, cache):
-        with open(self.cache_file, "wb") as f:
+        with open(self.cache_file, "wb+") as f:
             f.write(cache)
 
 
-class EncoderEntropyCalibrator(trt.IInt8EntropyCalibrator2):
-    def __init__(self, cache_file, batch_size=16):
-        AbstractEntropyCalibrator.__init__(self, cache_file, batch_size)
-        self.content_buffer = cuda.mem_alloc(3*1024*576*4 * self.batch_size)
+class EncoderEntropyCalibrator(AbstractEntropyCalibrator):
+    def __init__(self, cache_file, H, W, batch_size=8):
+        assert batch_size % 2 == 0
+        AbstractEntropyCalibrator.__init__(self, cache_file, H, W, batch_size//2)
+        self.buffer = cuda.mem_alloc(3*H*W*4 * batch_size)
+
+    def get_batch(self, names):
+        print(names)
+        try:
+            content = next(self.content_iter)[0]
+            style = next(self.style_iter)[0]
+            batch = np.ascontiguousarray(torch.cat((content, style)).numpy()).ravel()
+        except StopIteration:
+            return None
+        cuda.memcpy_htod(self.buffer, batch)
+        return [int(self.buffer)]
+ 
+class MatrixEntropyCalibrator(AbstractEntropyCalibrator):
+    def __init__(self, cache_file, H, W, vgg_path, batch_size=8):
+        assert batch_size % 2 == 0
+        AbstractEntropyCalibrator.__init__(self, cache_file, H, W, batch_size//2)
+        self.content_buffer = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        self.content_buffer_p = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        self.style_buffer = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        self.style_buffer_p = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        with trt.Runtime(TRT_LOGGER) as runtime:
+            with open(vgg_path, 'rb') as f:
+                self.vgg_engine = runtime.deserialize_cuda_engine(f.read())
+
 
     def get_batch(self, names):
         print(names)
         try:
             content = next(self.content_iter).numpy().ravel()
+            style = next(self.style_iter).numpy().ravel()
+            cuda.memcpy_htod(self.content_buffer, content)
+            cuda.memcpy_htod(self.style_buffer, style)
+            with self.vgg_engine.create_execution_context() as context:
+                context.execute(bindings=[int(self.content_buffer), int(self.content_buffer_p)])
+                context.execute(bindings=[int(self.style_buffer), int(self.style_buffer_p)])
         except StopIteration:
             return None, None
-        cuda.memcpy_htod(self.content_buffer, content)
-        return [self.content_buffer]
+        return [self.content_buffer_p, self.style_buffer_p]
 
+
+class DecoderEntropyCalibrator(AbstractEntropyCalibrator):
+    def __init__(self, cache_file, H, W, vgg_path, matrix_path, batch_size=8):
+        assert batch_size % 2 == 0
+        AbstractEntropyCalibrator.__init__(self, cache_file, H, W, batch_size//2)
+        self.content_buffer = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        self.content_buffer_p = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        self.style_buffer = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        self.style_buffer_p = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        self.matrix_buffer = cuda.mem_alloc(3*H*W*4 * batch_size//2)
+        with trt.Runtime(TRT_LOGGER) as runtime:
+            with open(vgg_path, 'rb') as f:
+                self.vgg_engine = runtime.deserialize_cuda_engine(f.read())
+        with trt.Runtime(TRT_LOGGER) as runtime:
+            with open(matrix_path, 'rb') as f:
+                self.vgg_engine = runtime.deserialize_cuda_engine(f.read())
+
+    def get_batch(self, names):
+        print(names)
+        try:
+            content = next(self.content_iter).numpy().ravel()
+            style = next(self.style_iter).numpy().ravel()
+            cuda.memcpy_htod(self.content_buffer, content)
+            cuda.memcpy_htod(self.style_buffer, style)
+            with self.vgg_engine.create_execution_context() as context:
+                context.execute(bindings=[int(self.content_buffer), int(self.content_buffer_p)])
+                context.execute(bindings=[int(self.style_buffer), int(self.style_buffer_p)])
+            with self.matrix_engine.create_execution_context() as context:
+                context.execute(bindings=[int(self.content_buffer_p),
+                    int(self.style_buffer_p), int(self.matrix_buffer)])
+        except StopIteration:
+            return None
+        return [self.matrix_buffer]
