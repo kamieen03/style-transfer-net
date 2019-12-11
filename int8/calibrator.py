@@ -71,10 +71,10 @@ def load_datasets(batch_size, H, W):
             transforms.ToTensor()
         ])
 
-    content_dataset = datasets.ImageFolder(root='../data/mscoco/', transform=tr)
+    content_dataset = datasets.ImageFolder(root='../data/mscoco/temp/', transform=tr)
     content_loader = torch.utils.data.DataLoader(content_dataset, batch_size=batch_size)
     content_iter = iter(content_loader)
-    style_dataset = datasets.ImageFolder(root='../data/wikiart/', transform=tr)
+    style_dataset = datasets.ImageFolder(root='../data/wikiart/temp/', transform=tr)
     style_loader = torch.utils.data.DataLoader(style_dataset, batch_size=batch_size)
     style_iter = iter(style_loader)
     return content_iter, style_iter

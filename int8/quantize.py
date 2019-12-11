@@ -57,8 +57,8 @@ from calibrator import DecoderEntropyCalibrator
 
 
 VGG_PATH = 'models/onnx/vgg_r31.onnx'
-MATRIX_PATH = 'models/trt/matrix_r31.onnx'
-DECODER_PATH = 'models/trt/decoder_r31.onnx'
+MATRIX_PATH = 'models/onnx/matrix_r31.onnx'
+DECODER_PATH = 'models/onnx/decoder_r31.onnx'
 
 DTYPE = trt.float32
 TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)
