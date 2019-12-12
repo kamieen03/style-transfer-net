@@ -16,7 +16,6 @@ class Dataset(data.Dataset):
         self.dataPath = dataPath
         self.image_list = [x for x in os.listdir(dataPath) if is_image_file(x)]
         self.image_list = sorted(self.image_list)
-        print(self.image_list)
         if(video):
             self.image_list = sorted(self.image_list)
 
