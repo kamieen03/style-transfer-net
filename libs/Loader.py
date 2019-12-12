@@ -26,7 +26,8 @@ class Dataset(data.Dataset):
 
         if not test:
             self.transform = transforms.Compose([
-            		         transforms.Resize((fineSize,fineSize)),
+            		         transforms.Resize(fineSize),
+                             transforms.RandomCrop(fineSize),
                              transforms.RandomHorizontalFlip(),
             		         transforms.ToTensor()])
         else:

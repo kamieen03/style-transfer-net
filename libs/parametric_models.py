@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 
 class encoder3(nn.Module):
-    def __init__(self):
-        super(encoder3,self,W).__init__()   # W - width
+    def __init__(self, W):
+        super(encoder3,self).__init__()   # W - width
         # vgg
         # 224 x 224
         self.conv1 = nn.Conv2d(3,3,1,1,0)
@@ -61,8 +61,8 @@ class encoder3(nn.Module):
         return out
 
 class decoder3(nn.Module):
-    def __init__(self):
-        super(decoder3,self,W).__init__()
+    def __init__(self, W):
+        super(decoder3,self).__init__()
         # decoder
         self.reflecPad7 = nn.ReflectionPad2d((1,1,1,1))
         self.conv7 = nn.Conv2d(int(256*W),int(128*W),3,1,0)
@@ -110,6 +110,7 @@ class decoder3(nn.Module):
         out = self.reflecPad11(out)
         out = self.conv11(out)
         return out
+
 class CNN(nn.Module):
     def __init__(self,layer,matrixSize=32):
         super(CNN,self,W).__init__()
