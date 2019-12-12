@@ -7,12 +7,13 @@ import torch.utils.data
 import torch.optim as optim
 from torch import nn
 import numpy as np
+import torch
 
 from libs.Loader import Dataset
 from libs.Autoencoder import Autoencoder
 
-BATCH_SIZE = 2
-CROP_SIZE = 300
+BATCH_SIZE = 16
+CROP_SIZE = 400
 ENCODER_SAVE_PATH = 'models/small/vgg_r31.pth'
 DECODER_SAVE_PATH = 'models/small/dec_r31.pth'
 EPOCHS = 100
@@ -28,6 +29,12 @@ class Trainer(object):
 
         # set up model and loss network
         self.model = Autoencoder(WIDTH)
+        temp = torch.load(ENCODER_SAVE_PATH)
+        print(temp)
+        self.model.encoder.load_state_dict(torch.load(DECODER_SAVE_PATH))
+        self.model.decoder.load_state_dict(torch.load(ENCODER_SAVE_PATH))
+        #except:
+        #    print('Couldnt load saved models. Proceeding with new weights')
         self.model.train()
         self.model.cuda()
         self.criterion = nn.MSELoss()
@@ -45,16 +52,17 @@ class Trainer(object):
 
     def train(self):
         best_val = 1e9
-        for epoch in range(1, EPOCHS+1): # count from one
-            self.train_single_epoch(epoch)
-            val = self.validate_single_epoch(epoch)
-            if val < best_val:
-                best_val = val
-                torch.save(self.model.encoder.state_dict(), DECODER_SAVE_PATH)
-                torch.save(self.model.decoder.state_dict(), ENCODER_SAVE_PATH)
+        with open('log.txt', 'w+') as f:
+            for epoch in range(1, EPOCHS+1): # count from one
+                self.train_single_epoch(epoch, f)
+                val = self.validate_single_epoch(epoch, f)
+                if val < best_val:
+                    best_val = val
+                    torch.save(self.model.encoder.state_dict(), DECODER_SAVE_PATH)
+                    torch.save(self.model.decoder.state_dict(), ENCODER_SAVE_PATH)
 
 
-    def train_single_epoch(self, epoch):
+    def train_single_epoch(self, epoch, f):
         batch_num = len(self.train_set)      # number of batches in training epoch
         self.model.train()
 
@@ -70,8 +78,11 @@ class Trainer(object):
             print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
                   f'Loss: {loss:.6f}')
+            f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                  f'Batch: [{batch_i+1}/{batch_num}] ' +
+                  f'Loss: {loss:.6f}')
 
-    def validate_single_epoch(self, epoch):
+    def validate_single_epoch(self, epoch, f):
         batch_num = len(self.valid_set)      # number of batches in training epoch
         self.model.eval()
         losses = []
@@ -81,6 +92,9 @@ class Trainer(object):
             loss = self.criterion(content, out)
             losses.append(loss.item())
             print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
+                  f'Batch: [{batch_i+1}/{batch_num}] ' +
+                  f'Loss: {loss:.6f}')
+            f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
                   f'Loss: {loss:.6f}')
         return np.mean(np.array(losses))
