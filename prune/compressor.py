@@ -48,14 +48,19 @@ class Compressor(object):
         self.model.dec.load_state_dict(torch.load(decoder_path))
         self.model.train()
         self.model.cuda()
+
         self.loss_module = encoder5()
         self.loss_module.eval()
         self.loss_module.cuda()
         self.loss_module.load_state_dict(torch.load(loss_module_path))
 
+        for param in self.loss_module.parameters():
+            param.requires_grad = False
+
+
         # set up loss function and optimizer
         self.criterion = LossCriterion(style_layers = ['r11','r21','r31', 'r41'],
-                                  content_layers=['r31', 'r41'],
+                                  content_layers=['r41'],
                                   style_weight=0.02,
                                   content_weight=1.0)
         self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4)
