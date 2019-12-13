@@ -12,47 +12,45 @@ import sys
 from libs.Loader import Dataset
 from libs.utils import makeVideo
 import torch.backends.cudnn as cudnn
-from libs import Transfer
 import torchvision.transforms as transforms
 
-PRUNED = False
+PARAMETRIC = False
 if len(sys.argv) > 1 and sys.argv[1] == '-p':
-    PRUNED = True
+    PARAMETRIC = True
 
-if PRUNED:
-    from libs.pruned_models import encoder3
-    from libs.pruned_models import decoder3
-    from libs.pruned_Matrix import MulLayer
+if PARAMETRIC:
+    from libs.parametric_models import encoder3, decoder3, MulLayer
 else:
     from libs.models import encoder3
     from libs.models import decoder3
     from libs.Matrix import MulLayer
 
 
-if PRUNED:
-    VGG_PATH    = 'models/pruned/vgg_c_r31.pth'
-    DEC_PATH    = 'models/pruned/dec_r31.pth'
-    MATRIX_PATH = 'models/pruned/matrix_r31.pth'
+if PARAMETRIC:
+    VGG_PATH    = 'models/parametric/vgg_r31.pth'
+    DEC_PATH    = 'models/parametric/dec_r31.pth'
+    MATRIX_PATH = 'models/parametric/matrix_r31.pth'
 else:
-    VGG_PATH    = 'models/vgg_r31.pth'
-    DEC_PATH    = 'models/dec_r31.pth'
-    MATRIX_PATH = 'models/r31.pth'
+    VGG_PATH    = 'models/regular/vgg_r31.pth'
+    DEC_PATH    = 'models/regular/dec_r31.pth'
+    MATRIX_PATH = 'models/regular/r31.pth'
 
 STYLE_PATH  = 'data/style/27.jpg'
 LAYER = 'r31'
+WIDTH = 0.5
 
 ################# MODEL #################
 if(LAYER == 'r31'):
-    matrix = MulLayer(layer='r31')
-    vgg = encoder3()
-    dec = decoder3()
+    matrix = MulLayer(layer='r31', WIDTH)
+    vgg = encoder3(WIDTH)
+    dec = decoder3(WIDTH)
 elif(LAYER == 'r41'):
     matrix = MulLayer(layer='r41')
     vgg = encoder4()
     dec = decoder4()
 vgg.load_state_dict(torch.load(VGG_PATH))
 dec.load_state_dict(torch.load(DEC_PATH))
-matrix.load_state_dict(torch.load(MATRIX_PATH))
+#matrix.load_state_dict(torch.load(MATRIX_PATH))
 for param in vgg.parameters():
     param.requires_grad = False
 for param in dec.parameters():
@@ -101,8 +99,9 @@ while(True):
     with torch.no_grad():
         cF = vgg(content)
         torch.cuda.synchronize()
-        feature = matrix(cF,sF)
-        transfer = dec(feature)
+        #feature = matrix(cF,sF)
+        #transfer = dec(feature)
+        transfer = dec(cF)
         transfer = transfer.clamp(0,1).squeeze(0)*255
         transfer = transfer.type(torch.uint8).data.cpu().numpy()
         transfer = transfer.transpose((1,2,0))
