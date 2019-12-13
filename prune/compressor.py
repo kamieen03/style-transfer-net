@@ -16,8 +16,8 @@ from libs.models import encoder5
 from libs.Loader import Dataset
 from libs.Criterion import LossCriterion
 
-BATCH_SIZE = 16 
-CROP_SIZE = 400
+BATCH_SIZE = 4 
+CROP_SIZE = 300
 VGG_C_SAVE_PATH = 'models/pruned/vgg_c_r31.pth'
 VGG_S_SAVE_PATH = 'models/pruned/vgg_s_r31.pth'
 MATRIX_SAVE_PATH = 'models/pruned/matrix_r31.pth'
