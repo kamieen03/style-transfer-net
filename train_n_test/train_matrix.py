@@ -13,8 +13,8 @@ from libs.Criterion import LossCriterion
 from libs.parametric_models import encoder3, MulLayer, decoder3
 from libs.models import encoder5
 
-BATCH_SIZE = 16
-CROP_SIZE = 400
+BATCH_SIZE = 4
+CROP_SIZE = 300
 WIDTH = 0.5
 ENCODER_SAVE_PATH = f'models/parametric/vgg_r31_W{WIDTH}.pth'
 DECODER_SAVE_PATH = f'models/parametric/dec_r31_W{WIDTH}.pth'
@@ -65,13 +65,13 @@ class Trainer(object):
 
     def load_datasets(self, content_path, style_path):
         """Load the datasets"""
-        content_dataset = Dataset(content_path, 400)  #300 isnt used anyway
+        content_dataset = Dataset(content_path, CROP_SIZE)
         content_loader = torch.utils.data.DataLoader(dataset     = content_dataset,
                                                      batch_size  = BATCH_SIZE,
                                                      shuffle     = True,
                                                      num_workers = 8,
                                                      drop_last   = True)
-        style_dataset = Dataset(style_path, 400)
+        style_dataset = Dataset(style_path, CROP_SIZE)
         style_loader = torch.utils.data.DataLoader(dataset     = style_dataset,
                                                    batch_size  = BATCH_SIZE,
                                                    shuffle     = True,
@@ -113,7 +113,9 @@ class Trainer(object):
             self.optimizer.step()
             print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f}')
+                  f'Loss: {loss:.6f} '+
+                  f'StyleLoss: {styleLoss:.6f} ' + 
+                  f'ContentLoss: {contentLoss:.6f} ')
             f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
                   f'Loss: {loss:.6f}')
@@ -137,9 +139,11 @@ class Trainer(object):
             loss, styleLoss, contentLoss = self.criterion(tF_loss, sF_loss, cF_loss)
 
             losses.append(loss.item())
-            print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
+            print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f}')
+                  f'Loss: {loss:.6f} '+
+                  f'StyleLoss: {styleLoss:.6f} ' + 
+                  f'ContentLoss: {contentLoss:.6f} ')
             f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
                   f'Loss: {loss:.6f}')
