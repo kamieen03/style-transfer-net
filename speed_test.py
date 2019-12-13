@@ -30,13 +30,15 @@ from libs.models import encoder5
 
 WIDTH = 0.5
 if PARAMETRIC:
-    VGG_PATH    = f'models/parametric/vgg_r31_W{WIDTH}.pth'
-    DEC_PATH    = f'models/parametric/dec_r31_W{WIDTH}.pth'
-    MATRIX_PATH = f'models/parametric/matrix_r31_W{WIDTH}.pth'
+    VGG_C_PATH  = f'models/pruned/vgg_c_r31.pth'
+    VGG_S_PATH  = f'models/pruned/vgg_s_r31.pth'
+    DEC_PATH    = f'models/pruned/dec_r31.pth'
+    MATRIX_PATH = f'models/pruned/matrix_r31.pth'
 else:
-    VGG_PATH    = 'models/regular/vgg_r31.pth'
-    DEC_PATH    = 'models/regular/dec_r31.pth'
-    MATRIX_PATH = 'models/regular/r31.pth'
+    VGG_C_PATH   = 'models/regular/vgg_r31.pth'
+    VGG_S_PATH   = 'models/regular/vgg_r31.pth'
+    DEC_PATH     = 'models/regular/dec_r31.pth'
+    MATRIX_PATH  = 'models/regular/r31.pth'
 LOSS_MODULE_PATH = 'models/regular/vgg_r51.pth'
 
 STYLE_PATH  = 'data/style/27.jpg'
@@ -45,20 +47,25 @@ LAYER = 'r31'
 ################# MODEL #################
 if PARAMETRIC:
     matrix = MulLayer('r31', WIDTH)
-    vgg = encoder3(WIDTH)
+    vgg_c = encoder3(WIDTH)
+    vgg_s = encoder3(WIDTH)
     dec = decoder3(WIDTH)
 else:
     matrix = MulLayer('r31')
-    vgg = encoder3()
+    vgg_c = encoder3()
+    vgg_s = encoder3()
     dec = decoder3()
 vgg5 = encoder5()
 
-vgg.load_state_dict(torch.load(VGG_PATH))
+vgg_c.load_state_dict(torch.load(VGG_C_PATH))
+vgg_s.load_state_dict(torch.load(VGG_S_PATH))
 dec.load_state_dict(torch.load(DEC_PATH))
 matrix.load_state_dict(torch.load(MATRIX_PATH))
 vgg5.load_state_dict(torch.load(LOSS_MODULE_PATH))
 
-for param in vgg.parameters():
+for param in vgg_c.parameters():
+    param.requires_grad = False
+for param in vgg_s.parameters():
     param.requires_grad = False
 for param in dec.parameters():
     param.requires_grad = False
@@ -72,7 +79,8 @@ content = torch.Tensor(1,3,576,1024)
 style = torch.Tensor(1,3,256,256)
 
 ################# GPU  #################
-vgg.cuda().eval()
+vgg_c.cuda().eval()
+vgg_s.cuda().eval()
 dec.cuda().eval()
 matrix.cuda().eval()
 vgg5.cuda().eval()
@@ -94,7 +102,7 @@ style_tmp = torch.from_numpy(style_tmp).unsqueeze(0)
 style.data.copy_(style_tmp)
 style = style / 255.0
 with torch.no_grad():
-    sF = vgg(style)
+    sF = vgg_c(style)
     sF_loss = vgg5(style)
 
 criterion = LossCriterion(style_layers = ['r11','r21','r31', 'r41'],
@@ -113,8 +121,8 @@ while(True):
     content = content/255.0
 
     with torch.no_grad():
-        cF = vgg(content)
-        torch.cuda.synchronize()
+        cF = vgg_c(content)
+        #torch.cuda.synchronize()
         feature = matrix(cF,sF)
         transfer = dec(feature)
         #transfer = dec(cF)
@@ -123,12 +131,12 @@ while(True):
         #tF = vgg5(transfer)
         #loss,styleLoss,contentLoss = criterion(tF,sF_loss,cF_loss)
         #print(loss.item(), styleLoss.item(), contentLoss.item())
-        #transfer = transfer.clamp(0,1).squeeze(0)*255
-        #transfer = transfer.type(torch.uint8).data.cpu().numpy()
-        #transfer = transfer.transpose((1,2,0))
+        transfer = transfer.clamp(0,1).squeeze(0)*255
+        transfer = transfer.type(torch.uint8).data.cpu().numpy()
+        transfer = transfer.transpose((1,2,0))
 
 
-        #out.write(transfer)
+        out.write(transfer)
         cv2.imshow('frame',transfer)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
