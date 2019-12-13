@@ -3,15 +3,15 @@
 import os, sys
 sys.path.append(os.path.abspath(__file__ + "/../../"))   # just so we can use 'libs'
 
-import torch.utils.data
+import torch
 import torch.optim as optim
 from torch import nn
 import numpy as np
-import torch
 
 from libs.Loader import Dataset
 from libs.Criterion import LossCriterion
 from libs.parametric_models import encoder3, MulLayer, decoder3
+from libs.models import encoder5
 
 BATCH_SIZE = 16
 CROP_SIZE = 400
@@ -79,7 +79,7 @@ class Trainer(object):
                                                    drop_last   = True)
         return content_loader, style_loader
 
-    def train_matrix(self):
+    def train(self):
         best_val = 1e9
         with open('log_matrix.txt', 'w+') as f:
             for epoch in range(1, EPOCHS+1): # count from one
@@ -87,27 +87,27 @@ class Trainer(object):
                 val = self.validate_single_epoch(epoch, f)
                 if val < best_val:
                     best_val = val
-                    torch.save(self.model.matrix.state_dict(), MATRIX_SAVE_PATH)
+                    torch.save(self.matrix.state_dict(), MATRIX_SAVE_PATH)
 
 
     def train_single_epoch(self, epoch, f):
-        batch_num = len(self.train_set)      # number of batches in training epoch
-        self.model.train()
+        batch_num = len(self.content_train)      # number of batches in training epoch
+        self.matrix.train()
 
-        for batch_i, (content, style) in enumerate(zip(self.train_content, self.train_style)):
+        for batch_i, (content, style) in enumerate(zip(self.content_train, self.style_train)):
             content = content[0].cuda() 
             style   = style[0].cuda()
 
             self.optimizer.zero_grad()
-            sF = self.vgg(styleV)
-            cF = self.vgg(contentV)
+            sF = self.vgg(style)
+            cF = self.vgg(content)
             feature = self.matrix(cF,sF)
             transfer = self.dec(feature)
 
-            sF_loss = self.vgg5(style)
-            cF_loss = self.vgg5(content)
-            tF_loss = self.vgg5(transfer)
-            loss, styleLoss, contentLoss = criterion(tF_loss, sF_loss, cF_loss)
+            sF_loss = self.loss_module(style)
+            cF_loss = self.loss_module(content)
+            tF_loss = self.loss_module(transfer)
+            loss, styleLoss, contentLoss = self.criterion(tF_loss, sF_loss, cF_loss)
 
             loss.backward()
             self.optimizer.step()
@@ -119,13 +119,23 @@ class Trainer(object):
                   f'Loss: {loss:.6f}')
 
     def validate_single_epoch(self, epoch, f):
-        batch_num = len(self.valid_set)      # number of batches in training epoch
-        self.model.eval()
+        batch_num = len(self.valid_train)      # number of batches in training epoch
+        self.matrix.eval()
         losses = []
-        for batch_i, content in enumerate(self.valid_set):
-            content = content[0].cuda()
-            out = self.model(content)
-            loss = self.criterion(content, out)
+        for batch_i, (content, style) in enumerate(zip(self.content_valid, self.style_valid)):
+            content = content[0].cuda() 
+            style   = style[0].cuda()
+
+            sF = self.vgg(style)
+            cF = self.vgg(content)
+            feature = self.matrix(cF,sF)
+            transfer = self.dec(feature)
+
+            sF_loss = self.loss_module(style)
+            cF_loss = self.loss_module(content)
+            tF_loss = self.loss_module(transfer)
+            loss, styleLoss, contentLoss = self.criterion(tF_loss, sF_loss, cF_loss)
+
             losses.append(loss.item())
             print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
