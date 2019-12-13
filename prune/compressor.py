@@ -16,20 +16,21 @@ from libs.models import encoder5
 from libs.Loader import Dataset
 from libs.Criterion import LossCriterion
 
-BATCH_SIZE = 2 
-CROP_SIZE = 256
+BATCH_SIZE = 16 
+CROP_SIZE = 400
 VGG_C_SAVE_PATH = 'models/pruned/vgg_c_r31.pth'
 VGG_S_SAVE_PATH = 'models/pruned/vgg_s_r31.pth'
 MATRIX_SAVE_PATH = 'models/pruned/matrix_r31.pth'
 DECODER_SAVE_PATH = 'models/pruned/dec_r31.pth'
-EPOCHS = 30
+EPOCHS = 5
 
 class Compressor(object):
     def __init__(self):
         datapath = '../data/'
-        vgg_path = 'models/vgg_r31.pth'
-        matrix_path = 'models/r31.pth'
-        decoder_path = 'models/dec_r31.pth'
+        vgg_path = 'models/regular/vgg_r31.pth'
+        matrix_path = 'models/regular/r31.pth'
+        decoder_path = 'models/regular/dec_r31.pth'
+        loss_module_path = 'models/regular/vgg_r51.pth'
         compression_schedule_path = 'prune/schedule.yaml'
 
         # set up datasets
@@ -49,10 +50,11 @@ class Compressor(object):
         self.loss_module = encoder5()
         self.loss_module.eval()
         self.loss_module.cuda()
+        self.loss_module.load_state_dict(torch.load(loss_module_path))
 
         # set up loss function and optimizer
-        self.criterion = LossCriterion(style_layers = ['r11','r21','r31'],
-                                  content_layers=['r31'],
+        self.criterion = LossCriterion(style_layers = ['r11','r21','r31', 'r41'],
+                                  content_layers=['r31', 'r41'],
                                   style_weight=0.02,
                                   content_weight=1.0)
         self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4)
