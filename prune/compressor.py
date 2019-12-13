@@ -23,6 +23,7 @@ VGG_S_SAVE_PATH = 'models/pruned/vgg_s_r31.pth'
 MATRIX_SAVE_PATH = 'models/pruned/matrix_r31.pth'
 DECODER_SAVE_PATH = 'models/pruned/dec_r31.pth'
 EPOCHS = 5
+WIDTH = 0.5
 
 class Compressor(object):
     def __init__(self):
@@ -40,7 +41,7 @@ class Compressor(object):
             datapath+'mscoco/validate', datapath+'wikiart/validate')
 
         # set up model and loss network
-        self.model = Transfer3()
+        self.model = Transfer3(WIDTH)
         self.model.vgg_c.load_state_dict(torch.load(vgg_path))
         self.model.vgg_s.load_state_dict(torch.load(vgg_path))
         self.model.matrix.load_state_dict(torch.load(matrix_path))
@@ -70,13 +71,13 @@ class Compressor(object):
         content_loader = torch.utils.data.DataLoader(dataset     = content_dataset,
                                                      batch_size  = BATCH_SIZE,
                                                      shuffle     = True,
-                                                     num_workers = 3,
+                                                     num_workers = 8,
                                                      drop_last   = True)
         style_dataset = Dataset(style_path, 256) 
         style_loader = torch.utils.data.DataLoader(dataset     = style_dataset,
                                                    batch_size  = BATCH_SIZE,
                                                    shuffle     = True,
-                                                   num_workers = 3,
+                                                   num_workers = 8,
                                                    drop_last   = True)
         return content_loader, style_loader
 
