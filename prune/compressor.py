@@ -126,19 +126,19 @@ class Compressor(object):
         batch_num = len(self.content_valid)      # number of batches in training epoch
         self.model.eval()
 
-        for batch_i, (content, style) in enumerate(zip(self.content_valid, self.style_valid)):
-            content, style = content[0].cuda(), style[0].cuda()
-            inp = torch.cat((content, style),dim=1)
-            self.optimizer.zero_grad()
-            transfer = self.model(inp)
-            sF_loss = self.loss_module(style)
-            cF_loss = self.loss_module(content)
-            tF = self.loss_module(transfer)
-            loss, style_loss, content_loss = self.criterion(tF,sF_loss,cF_loss)
+        with torch.no_grad():
+            for batch_i, (content, style) in enumerate(zip(self.content_valid, self.style_valid)):
+                content, style = content[0].cuda(), style[0].cuda()
+                inp = torch.cat((content, style),dim=1)
+                transfer = self.model(inp)
+                sF_loss = self.loss_module(style)
+                cF_loss = self.loss_module(content)
+                tF = self.loss_module(transfer)
+                loss, style_loss, content_loss = self.criterion(tF,sF_loss,cF_loss)
 
-            print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
-                  f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}')
+                print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
+                      f'Batch: [{batch_i+1}/{batch_num}] ' +
+                      f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}')
 
 
 def main():

@@ -82,17 +82,18 @@ class Trainer(object):
         batch_num = len(self.valid_set)      # number of batches in training epoch
         self.model.eval()
         losses = []
-        for batch_i, content in enumerate(self.valid_set):
-            content = content[0].cuda()
-            out = self.model(content)
-            loss = self.criterion(content, out)
-            losses.append(loss.item())
-            print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
-                  f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f}')
-            f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
-                  f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f}')
+        with torch.no_grad():
+            for batch_i, content in enumerate(self.valid_set):
+                content = content[0].cuda()
+                out = self.model(content)
+                loss = self.criterion(content, out)
+                losses.append(loss.item())
+                print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
+                      f'Batch: [{batch_i+1}/{batch_num}] ' +
+                      f'Loss: {loss:.6f}')
+                f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                      f'Batch: [{batch_i+1}/{batch_num}] ' +
+                      f'Loss: {loss:.6f}')
         return np.mean(np.array(losses))
 
 

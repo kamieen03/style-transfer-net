@@ -131,29 +131,31 @@ class Trainer(object):
         batch_num = len(self.valid_train)      # number of batches in training epoch
         self.matrix.eval()
         losses = []
-        for batch_i, (content, style) in enumerate(zip(self.content_valid, self.style_valid)):
-            content = content[0].cuda() 
-            style   = style[0].cuda()
+        
+        with torch.no_grad():
+            for batch_i, (content, style) in enumerate(zip(self.content_valid, self.style_valid)):
+                content = content[0].cuda() 
+                style   = style[0].cuda()
 
-            sF = self.vgg(style)
-            cF = self.vgg(content)
-            feature = self.matrix(cF,sF)
-            transfer = self.dec(feature)
+                sF = self.vgg(style)
+                cF = self.vgg(content)
+                feature = self.matrix(cF,sF)
+                transfer = self.dec(feature)
 
-            sF_loss = self.loss_module(style)
-            cF_loss = self.loss_module(content)
-            tF_loss = self.loss_module(transfer)
-            loss, styleLoss, contentLoss = self.criterion(tF_loss, sF_loss, cF_loss)
+                sF_loss = self.loss_module(style)
+                cF_loss = self.loss_module(content)
+                tF_loss = self.loss_module(transfer)
+                loss, styleLoss, contentLoss = self.criterion(tF_loss, sF_loss, cF_loss)
 
-            losses.append(loss.item())
-            print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
-                  f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f} '+
-                  f'StyleLoss: {styleLoss:.6f} ' + 
-                  f'ContentLoss: {contentLoss:.6f} ')
-            f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
-                  f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f}')
+                losses.append(loss.item())
+                print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                      f'Batch: [{batch_i+1}/{batch_num}] ' +
+                      f'Loss: {loss:.6f} '+
+                      f'StyleLoss: {styleLoss:.6f} ' + 
+                      f'ContentLoss: {contentLoss:.6f} ')
+                f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                      f'Batch: [{batch_i+1}/{batch_num}] ' +
+                      f'Loss: {loss:.6f}')
         return np.mean(np.array(losses))
 
 
