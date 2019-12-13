@@ -26,10 +26,11 @@ else:
     from libs.Matrix import MulLayer
 
 
+WIDTH = 0.5
 if PARAMETRIC:
-    VGG_PATH    = 'models/parametric/vgg_r31.pth'
-    DEC_PATH    = 'models/parametric/dec_r31.pth'
-    MATRIX_PATH = 'models/parametric/matrix_r31.pth'
+    VGG_PATH    = f'models/parametric/vgg_r31_W{WIDTH}.pth'
+    DEC_PATH    = f'models/parametric/dec_r31_W{WIDTH}.pth'
+    MATRIX_PATH = f'models/parametric/matrix_r31_W{WIDTH}.pth'
 else:
     VGG_PATH    = 'models/regular/vgg_r31.pth'
     DEC_PATH    = 'models/regular/dec_r31.pth'
@@ -37,11 +38,10 @@ else:
 
 STYLE_PATH  = 'data/style/27.jpg'
 LAYER = 'r31'
-WIDTH = 0.5
 
 ################# MODEL #################
 if(LAYER == 'r31'):
-    matrix = MulLayer(layer='r31', WIDTH)
+    matrix = MulLayer('r31', WIDTH)
     vgg = encoder3(WIDTH)
     dec = decoder3(WIDTH)
 elif(LAYER == 'r41'):
