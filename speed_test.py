@@ -10,6 +10,7 @@ from torchsummary import summary
 import sys
 
 from libs.Loader import Dataset
+from libs.Criterion import LossCriterion
 from libs.utils import makeVideo
 import torch.backends.cudnn as cudnn
 import torchvision.transforms as transforms
@@ -24,6 +25,7 @@ else:
     from libs.models import encoder3
     from libs.models import decoder3
     from libs.Matrix import MulLayer
+from libs.models import encoder5
 
 
 WIDTH = 0.5
@@ -35,27 +37,34 @@ else:
     VGG_PATH    = 'models/regular/vgg_r31.pth'
     DEC_PATH    = 'models/regular/dec_r31.pth'
     MATRIX_PATH = 'models/regular/r31.pth'
+LOSS_MODULE_PATH = 'models/regular/vgg_r51.pth'
 
 STYLE_PATH  = 'data/style/27.jpg'
 LAYER = 'r31'
 
 ################# MODEL #################
-if(LAYER == 'r31'):
+if PARAMETRIC:
     matrix = MulLayer('r31', WIDTH)
     vgg = encoder3(WIDTH)
     dec = decoder3(WIDTH)
-elif(LAYER == 'r41'):
-    matrix = MulLayer(layer='r41')
-    vgg = encoder4()
-    dec = decoder4()
+else:
+    matrix = MulLayer('r31')
+    vgg = encoder3()
+    dec = decoder3()
+vgg5 = encoder5()
+
 vgg.load_state_dict(torch.load(VGG_PATH))
 dec.load_state_dict(torch.load(DEC_PATH))
-#matrix.load_state_dict(torch.load(MATRIX_PATH))
+matrix.load_state_dict(torch.load(MATRIX_PATH))
+vgg5.load_state_dict(torch.load(LOSS_MODULE_PATH))
+
 for param in vgg.parameters():
     param.requires_grad = False
 for param in dec.parameters():
     param.requires_grad = False
 for param in matrix.parameters():
+    param.requires_grad = False
+for param in vgg5.parameters():
     param.requires_grad = False
 
 ################# GLOBAL VARIABLE #################
@@ -66,6 +75,7 @@ style = torch.Tensor(1,3,256,256)
 vgg.cuda().eval()
 dec.cuda().eval()
 matrix.cuda().eval()
+vgg5.cuda().eval()
 
 style = style.cuda()
 content = content.cuda()
@@ -85,6 +95,12 @@ style.data.copy_(style_tmp)
 style = style / 255.0
 with torch.no_grad():
     sF = vgg(style)
+    sF_loss = vgg5(style)
+
+criterion = LossCriterion(style_layers = ['r11','r21','r31', 'r41'],
+                          content_layers=['r41'],
+                          style_weight=0.02,
+                          content_weight=1.0)
 
 i = 0
 tt = time()
@@ -99,12 +115,18 @@ while(True):
     with torch.no_grad():
         cF = vgg(content)
         torch.cuda.synchronize()
-        #feature = matrix(cF,sF)
-        #transfer = dec(feature)
-        transfer = dec(cF)
-        transfer = transfer.clamp(0,1).squeeze(0)*255
-        transfer = transfer.type(torch.uint8).data.cpu().numpy()
-        transfer = transfer.transpose((1,2,0))
+        feature = matrix(cF,sF)
+        transfer = dec(feature)
+        #transfer = dec(cF)
+
+        #cF_loss = vgg5(content)
+        #tF = vgg5(transfer)
+        #loss,styleLoss,contentLoss = criterion(tF,sF_loss,cF_loss)
+        #print(loss.item(), styleLoss.item(), contentLoss.item())
+        #transfer = transfer.clamp(0,1).squeeze(0)*255
+        #transfer = transfer.type(torch.uint8).data.cpu().numpy()
+        #transfer = transfer.transpose((1,2,0))
+
 
         #out.write(transfer)
         cv2.imshow('frame',transfer)
