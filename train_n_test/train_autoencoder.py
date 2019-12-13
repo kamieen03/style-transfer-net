@@ -27,14 +27,10 @@ class Trainer(object):
         self.train_set = self.load_dataset(datapath+'mscoco/train/')
         self.valid_set = self.load_dataset(datapath+'mscoco/validate/')
 
-        # set up model and loss network
+        # set up model
         self.model = Autoencoder(WIDTH)
-        temp = torch.load(ENCODER_SAVE_PATH)
-        print(temp)
-        self.model.encoder.load_state_dict(torch.load(DECODER_SAVE_PATH))
-        self.model.decoder.load_state_dict(torch.load(ENCODER_SAVE_PATH))
-        #except:
-        #    print('Couldnt load saved models. Proceeding with new weights')
+        self.model.encoder.load_state_dict(torch.load(ENCODER_SAVE_PATH))
+        self.model.decoder.load_state_dict(torch.load(DECODER_SAVE_PATH))
         self.model.train()
         self.model.cuda()
         self.criterion = nn.MSELoss()
@@ -52,14 +48,14 @@ class Trainer(object):
 
     def train(self):
         best_val = 1e9
-        with open('log.txt', 'w+') as f:
+        with open('autoencoder_log.txt', 'w+') as f:
             for epoch in range(1, EPOCHS+1): # count from one
                 self.train_single_epoch(epoch, f)
                 val = self.validate_single_epoch(epoch, f)
                 if val < best_val:
                     best_val = val
-                    torch.save(self.model.encoder.state_dict(), DECODER_SAVE_PATH)
-                    torch.save(self.model.decoder.state_dict(), ENCODER_SAVE_PATH)
+                    torch.save(self.model.encoder.state_dict(), ENCODER_SAVE_PATH)
+                    torch.save(self.model.decoder.state_dict(), DECODER_SAVE_PATH)
 
 
     def train_single_epoch(self, epoch, f):
