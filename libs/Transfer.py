@@ -1,4 +1,5 @@
-from libs.parametric_models import encoder3, decoder3, MulLayer
+from libs.models import encoder3, decoder3
+from libs.Matrix import MulLayer
 import torch.nn
 
 
