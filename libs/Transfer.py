@@ -4,12 +4,12 @@ import torch.nn
 
 
 class Transfer3(torch.nn.Module):
-    def __init__(self, WIDTH):
+    def __init__(self):
         super(Transfer3, self).__init__()
-        self.vgg_c = encoder3(WIDTH)
-        self.vgg_s = encoder3(WIDTH)
-        self.matrix = MulLayer(layer='r31', WIDTH)
-        self.dec = decoder3(WIDTH)
+        self.vgg_c = encoder3()
+        self.vgg_s = encoder3()
+        self.matrix = MulLayer(layer='r31')
+        self.dec = decoder3()
 
     def forward(self, inp): 
         # assuming inp is 5D tensor (B,6,H,W)

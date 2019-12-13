@@ -41,7 +41,7 @@ class Compressor(object):
             datapath+'mscoco/validate', datapath+'wikiart/validate')
 
         # set up model and loss network
-        self.model = Transfer3(WIDTH)
+        self.model = Transfer3()
         self.model.vgg_c.load_state_dict(torch.load(vgg_path))
         self.model.vgg_s.load_state_dict(torch.load(vgg_path))
         self.model.matrix.load_state_dict(torch.load(matrix_path))
