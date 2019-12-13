@@ -14,10 +14,10 @@ from libs.Autoencoder import Autoencoder
 
 BATCH_SIZE = 16
 CROP_SIZE = 400
-ENCODER_SAVE_PATH = 'models/small/vgg_r31.pth'
-DECODER_SAVE_PATH = 'models/small/dec_r31.pth'
-EPOCHS = 100
 WIDTH = 0.5
+ENCODER_SAVE_PATH = f'models/parametric/vgg_r31_W{WIDTH}.pth'
+DECODER_SAVE_PATH = f'models/parametric/dec_r31_W{WIDTH}.pth'
+EPOCHS = 100
 
 class Trainer(object):
     def __init__(self):

@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+
+import os, sys
+sys.path.append(os.path.abspath(__file__ + "/../../"))   # just so we can use 'libs'
+
+import torch.utils.data
+import torch.optim as optim
+from torch import nn
+import numpy as np
+import torch
+
+from libs.Loader import Dataset
+from libs.Criterion import LossCriterion
+from libs.parametric_models import encoder3, MulLayer, decoder3
+
+BATCH_SIZE = 16
+CROP_SIZE = 400
+WIDTH = 0.5
+ENCODER_SAVE_PATH = f'models/parametric/vgg_r31_W{WIDTH}.pth'
+DECODER_SAVE_PATH = f'models/parametric/dec_r31_W{WIDTH}.pth'
+MATRIX_SAVE_PATH  = f'models/parametric/matrix_r31_W{WIDTH}.pth'
+LOSS_MODULE_PATH  = 'models/regular/vgg_r51.pth'
+EPOCHS = 20
+
+class Trainer(object):
+    def __init__(self):
+        datapath = '../data/'
+
+        # set up datasets
+        self.content_train, self.style_train = self.load_datasets(
+            datapath+'mscoco/train', datapath+'wikiart/train')
+        self.content_valid, self.style_valid = self.load_datasets(
+            datapath+'mscoco/validate', datapath+'wikiart/validate')
+
+
+        self.matrix = MulLayer('r31', WIDTH)
+        self.matrix.train()
+        self.matrix.cuda()
+        try:
+            self.matrix.load_state_dict(torch.load(MATRIX_SAVE_PATH))
+        except:
+            print("Matrix checkpoint not found. Proceeding with new weights.")
+
+        self.vgg = encoder3(WIDTH)
+        self.vgg.eval()
+        self.vgg.cuda()
+        self.vgg.load_state_dict(torch.load(ENCODER_SAVE_PATH))
+
+        self.dec = decoder3(WIDTH)
+        self.dec.eval()
+        self.dec.cuda()
+        self.dec.load_state_dict(torch.load(DECODER_SAVE_PATH))
+
+        self.loss_module = encoder5()
+        self.loss_module.eval()
+        self.loss_module.cuda()
+        self.loss_module.load_state_dict(torch.load(LOSS_MODULE_PATH))
+
+        # set up loss function and optimizer
+        self.criterion = LossCriterion(style_layers = ['r11','r21','r31','r41'],
+                                  content_layers=['r41'],
+                                  style_weight=0.02,
+                                  content_weight=1.0)
+        self.optimizer = optim.Adam(self.matrix.parameters(), lr=1e-4)
+
+    def load_datasets(self, content_path, style_path):
+        """Load the datasets"""
+        content_dataset = Dataset(content_path, 400)  #300 isnt used anyway
+        content_loader = torch.utils.data.DataLoader(dataset     = content_dataset,
+                                                     batch_size  = BATCH_SIZE,
+                                                     shuffle     = True,
+                                                     num_workers = 8,
+                                                     drop_last   = True)
+        style_dataset = Dataset(style_path, 400)
+        style_loader = torch.utils.data.DataLoader(dataset     = style_dataset,
+                                                   batch_size  = BATCH_SIZE,
+                                                   shuffle     = True,
+                                                   num_workers = 8,
+                                                   drop_last   = True)
+        return content_loader, style_loader
+
+    def train_matrix(self):
+        best_val = 1e9
+        with open('log_matrix.txt', 'w+') as f:
+            for epoch in range(1, EPOCHS+1): # count from one
+                self.train_single_epoch(epoch, f)
+                val = self.validate_single_epoch(epoch, f)
+                if val < best_val:
+                    best_val = val
+                    torch.save(self.model.matrix.state_dict(), MATRIX_SAVE_PATH)
+
+
+    def train_single_epoch(self, epoch, f):
+        batch_num = len(self.train_set)      # number of batches in training epoch
+        self.model.train()
+
+        for batch_i, (content, style) in enumerate(zip(self.train_content, self.train_style)):
+            content = content[0].cuda() 
+            style   = style[0].cuda()
+
+            self.optimizer.zero_grad()
+            sF = self.vgg(styleV)
+            cF = self.vgg(contentV)
+            feature = self.matrix(cF,sF)
+            transfer = self.dec(feature)
+
+            sF_loss = self.vgg5(style)
+            cF_loss = self.vgg5(content)
+            tF_loss = self.vgg5(transfer)
+            loss, styleLoss, contentLoss = criterion(tF_loss, sF_loss, cF_loss)
+
+            loss.backward()
+            self.optimizer.step()
+            print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                  f'Batch: [{batch_i+1}/{batch_num}] ' +
+                  f'Loss: {loss:.6f}')
+            f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                  f'Batch: [{batch_i+1}/{batch_num}] ' +
+                  f'Loss: {loss:.6f}')
+
+    def validate_single_epoch(self, epoch, f):
+        batch_num = len(self.valid_set)      # number of batches in training epoch
+        self.model.eval()
+        losses = []
+        for batch_i, content in enumerate(self.valid_set):
+            content = content[0].cuda()
+            out = self.model(content)
+            loss = self.criterion(content, out)
+            losses.append(loss.item())
+            print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
+                  f'Batch: [{batch_i+1}/{batch_num}] ' +
+                  f'Loss: {loss:.6f}')
+            f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                  f'Batch: [{batch_i+1}/{batch_num}] ' +
+                  f'Loss: {loss:.6f}')
+        return np.mean(np.array(losses))
+
+
+def main():
+    c = Trainer()
+    c.train()
+
+if __name__ == '__main__':
+    main()
+
