@@ -120,7 +120,7 @@ class Compressor(object):
             self.compression_scheduler.on_minibatch_end(epoch, batch_i, batch_num, self.optimizer)
             print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.4f} contentLoss: {10000*content_loss:.4f} styleLoss: {style_loss:.4f}')
+                  f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}')
 
     def validate_single_epoch(self, epoch):
         batch_num = len(self.content_valid)      # number of batches in training epoch
@@ -137,7 +137,7 @@ class Compressor(object):
 
             print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.4f} contentLoss: {10000*content_loss:.4f} styleLoss: {style_loss:.4f}')
+                  f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}')
 
 
 def main():
