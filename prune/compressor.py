@@ -16,7 +16,7 @@ from libs.models import encoder5
 from libs.Loader import Dataset
 from libs.Criterion import LossCriterion
 
-BATCH_SIZE = 4 
+BATCH_SIZE = 8 
 CROP_SIZE = 300
 VGG_C_SAVE_PATH = 'models/pruned/vgg_c_r31.pth'
 VGG_S_SAVE_PATH = 'models/pruned/vgg_s_r31.pth'
@@ -36,7 +36,7 @@ class Compressor(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/train', datapath+'wikiart/train')
+            datapath+'mscoco/prune_train', datapath+'wikiart/prune_train')
         self.content_valid, self.style_valid = self.load_datasets(
             datapath+'mscoco/validate', datapath+'wikiart/validate')
 
@@ -72,13 +72,13 @@ class Compressor(object):
 
     def load_datasets(self, content_path, style_path):
         """Load the datasets"""
-        content_dataset = Dataset(content_path, 256)  #300 isnt used anyway
+        content_dataset = Dataset(content_path, CROP_SIZE)  #300 isnt used anyway
         content_loader = torch.utils.data.DataLoader(dataset     = content_dataset,
                                                      batch_size  = BATCH_SIZE,
                                                      shuffle     = True,
                                                      num_workers = 8,
                                                      drop_last   = True)
-        style_dataset = Dataset(style_path, 256) 
+        style_dataset = Dataset(style_path, CROP_SIZE) 
         style_loader = torch.utils.data.DataLoader(dataset     = style_dataset,
                                                    batch_size  = BATCH_SIZE,
                                                    shuffle     = True,
@@ -129,6 +129,7 @@ class Compressor(object):
         for batch_i, (content, style) in enumerate(zip(self.content_valid, self.style_valid)):
             content, style = content[0].cuda(), style[0].cuda()
             inp = torch.cat((content, style),dim=1)
+            self.optimizer.zero_grad()
             transfer = self.model(inp)
             sF_loss = self.loss_module(style)
             cF_loss = self.loss_module(content)
