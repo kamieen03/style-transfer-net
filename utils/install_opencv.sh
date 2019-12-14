@@ -12,7 +12,7 @@ cd ..
 mkdir build
 cd build
 cmake -D WITH_CUDA=ON -D CUDA_GENERATION="Maxwell" --D CMAKE_BUILD_TYPE=RELEASE \
-           -D WITH_CUBLAS=1 -D ENABLE_FAST_MATH=1 -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib/modules ../opencv
+           -D WITH_CUBLAS=1 -D ENABLE_FAST_MATH=1  -D WITH_LIBV4L=ON -D WITH_FFMPEG=ON -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib/modules ../opencv
 make -j $(nproc)
 make install
 cd /tmp
