@@ -36,7 +36,7 @@ class Compressor(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/train', datapath+'wikiart/train')
+            datapath+'mscoco/prune_train', datapath+'wikiart/prune_train')
         self.content_valid, self.style_valid = self.load_datasets(
             datapath+'mscoco/validate', datapath+'wikiart/validate')
 
@@ -87,17 +87,18 @@ class Compressor(object):
         return content_loader, style_loader
 
     def train(self):
-        for epoch in range(1, EPOCHS+1): # count from one
-            self.compression_scheduler.on_epoch_begin(epoch)
-            self.train_single_epoch(epoch)
-            self.validate_single_epoch(epoch)
-            self.compression_scheduler.on_epoch_end(epoch)
-            torch.save(self.model.vgg_c.state_dict(), VGG_C_SAVE_PATH)
-            torch.save(self.model.vgg_s.state_dict(), VGG_S_SAVE_PATH)
-            torch.save(self.model.matrix.state_dict(), MATRIX_SAVE_PATH)
-            torch.save(self.model.dec.state_dict(), DECODER_SAVE_PATH)
+        with open('log_prune.txt', 'w+') as f:
+            for epoch in range(1, EPOCHS+1): # count from one
+                self.compression_scheduler.on_epoch_begin(epoch)
+                self.train_single_epoch(epoch, f)
+                self.validate_single_epoch(epoch, f)
+                self.compression_scheduler.on_epoch_end(epoch)
+                torch.save(self.model.vgg_c.state_dict(), VGG_C_SAVE_PATH)
+                torch.save(self.model.vgg_s.state_dict(), VGG_S_SAVE_PATH)
+                torch.save(self.model.matrix.state_dict(), MATRIX_SAVE_PATH)
+                torch.save(self.model.dec.state_dict(), DECODER_SAVE_PATH)
 
-    def train_single_epoch(self, epoch):
+    def train_single_epoch(self, epoch, f):
         batch_num = len(self.content_train)      # number of batches in training epoch
         self.model.train()
 
@@ -121,10 +122,14 @@ class Compressor(object):
             print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
                   f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}')
+            f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                    f'Batch: [{batch_i+1}/{batch_num}] ' +
+                    f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}\n')
 
-    def validate_single_epoch(self, epoch):
+    def validate_single_epoch(self, epoch, f):
         batch_num = len(self.content_valid)      # number of batches in training epoch
         self.model.eval()
+        self.optimizer.zero_grad()
 
         with torch.no_grad():
             for batch_i, (content, style) in enumerate(zip(self.content_valid, self.style_valid)):
@@ -139,6 +144,9 @@ class Compressor(object):
                 print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                       f'Batch: [{batch_i+1}/{batch_num}] ' +
                       f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}')
+                f.write(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
+                        f'Batch: [{batch_i+1}/{batch_num}] ' +
+                        f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}\n')
 
 
 def main():
