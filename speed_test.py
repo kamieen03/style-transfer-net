@@ -4,9 +4,8 @@ import cv2
 import torch
 import numpy as np
 import argparse
-import tensorrt as trt
+#import tensorrt as trt
 from time import time
-from torchsummary import summary
 import sys
 
 from libs.Loader import Dataset
