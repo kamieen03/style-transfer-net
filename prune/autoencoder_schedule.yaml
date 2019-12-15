@@ -1,0 +1,36 @@
+version: 1
+
+pruners:
+  filter_pruner:
+    class: L1RankedStructureParameterPruner_AGP
+    initial_sparsity : 0.05
+    final_sparsity: 0.50
+    group_type: Filters
+    weights: [vgg.conv2.weight,
+              vgg.conv3.weight,
+              vgg.conv4.weight,
+              vgg.conv5.weight,
+              vgg.conv6.weight,
+              dec.conv7.weight,
+              dec.conv8.weight,
+              dec.conv9.weight,
+              dec.conv10.weight]
+
+lr_schedulers:
+  pruning_lr:
+    class: ExponentialLR
+    gamma: 0.99
+
+
+policies:
+  - pruner:
+      instance_name : filter_pruner
+    starting_epoch: 0
+    ending_epoch: 10
+    frequency: 1
+
+  - lr_scheduler:
+      instance_name: pruning_lr
+    starting_epoch: 12
+    ending_epoch: 20
+    frequency: 1
