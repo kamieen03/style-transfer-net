@@ -31,7 +31,7 @@ class Compressor(object):
         datapath = '../data/'
         vgg_path = 'models/pruned/autoencoder/vgg_r31.pth'
         matrix_path = 'models/regular/r31.pth'
-        decoder_path = 'models/pruned/autoendcoder/dec_r31.pth'
+        decoder_path = 'models/pruned/autoencoder/dec_r31.pth'
         loss_module_path = 'models/regular/vgg_r51.pth'
         compression_schedule_path = 'prune/matrix_schedule.yaml'
 
@@ -98,7 +98,7 @@ class Compressor(object):
 
     def train(self):
         best_val = 1e9
-        with open('log_prune.txt', 'w+') as f:
+        with open('log_matrix_prune.txt', 'w+') as f:
             for epoch in range(1, EPOCHS+1): # count from one
                 self.compression_scheduler.on_epoch_begin(epoch)
                 self.train_single_epoch(epoch, f)
