@@ -18,7 +18,7 @@ from libs.Loader import Dataset
 
 BATCH_SIZE = 16 
 CROP_SIZE = 300
-VGG_SAVE_PATH = 'models/pruned/autoencoder/vgg_c_r31.pth'
+VGG_SAVE_PATH = 'models/pruned/autoencoder/vgg_r31.pth'
 DECODER_SAVE_PATH = 'models/pruned/autoencoder/dec_r31.pth'
 EPOCHS = 21
 WIDTH = 0.5
