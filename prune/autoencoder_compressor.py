@@ -67,12 +67,10 @@ class Compressor(object):
             for epoch in range(1, EPOCHS+1): # count from one
                 self.compression_scheduler.on_epoch_begin(epoch)
                 self.train_single_epoch(epoch, f)
-                val = self.validate_single_epoch(epoch, f)
+                #val = self.validate_single_epoch(epoch, f)
                 self.compression_scheduler.on_epoch_end(epoch)
-                if epoch >= 12 and val < best_val:
-                    best_val = val
-                    torch.save(self.model.encoder.state_dict(), VGG_SAVE_PATH)
-                    torch.save(self.model.decoder.state_dict(), DECODER_SAVE_PATH)
+                torch.save(self.model.encoder.state_dict(), VGG_SAVE_PATH)
+                torch.save(self.model.decoder.state_dict(), DECODER_SAVE_PATH)
 
     def train_single_epoch(self, epoch, f):
         batch_num = len(self.content_train)      # number of batches in training epoch
