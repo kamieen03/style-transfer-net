@@ -16,12 +16,6 @@ pruners:
               dec.conv9.weight,
               dec.conv10.weight]
 
-lr_schedulers:
-  pruning_lr:
-    class: ExponentialLR
-    gamma: 0.99
-
-
 policies:
   - pruner:
       instance_name : filter_pruner
@@ -29,8 +23,3 @@ policies:
     ending_epoch: 10
     frequency: 1
 
-  - lr_scheduler:
-      instance_name: pruning_lr
-    starting_epoch: 12
-    ending_epoch: 20
-    frequency: 1
