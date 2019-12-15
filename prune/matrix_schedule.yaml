@@ -6,11 +6,28 @@ pruners:
     initial_sparsity : 0.05
     final_sparsity: 0.50
     group_type: Filters
-    weights: [matrix.snet.convs.0.weight,
+    weights: [vgg_c.conv2.weight,
+              vgg_c.conv3.weight,
+              vgg_c.conv4.weight,
+              vgg_c.conv5.weight,
+#              vgg_c.conv6.weight,
+              vgg_s.conv2.weight,
+              vgg_s.conv3.weight,
+              vgg_s.conv4.weight,
+              vgg_s.conv5.weight,
+#              vgg_s.conv6.weight,
+#              matrix.compress.weight,
+              matrix.snet.convs.0.weight,
               matrix.snet.convs.2.weight,
+#              matrix.snet.convs.4.weight,
               matrix.cnet.convs.0.weight,
               matrix.cnet.convs.2.weight,
-              matrx.unzip.weight]
+#              matrix.cnet.convs.4.weight,
+              matrx.unzip.weight,
+              dec.conv7.weight,
+              dec.conv8.weight,
+              dec.conv9.weight,
+              dec.conv10.weight]
 
   unzip_pruner:
     class: L1RankedStructureParameterPruner_AGP
@@ -22,6 +39,7 @@ pruners:
               vgg_s.conv6.weight,
               matrix.unzip.weight]
 
+
 extensions:
   net_thinner:
     class: 'FilterRemover'
@@ -32,22 +50,25 @@ extensions:
 lr_schedulers:
   pruning_lr:
     class: ExponentialLR
-    gamma: 0.99
+    gamma: 0.95
 
 
 policies:
   - pruner:
       instance_name : filter_pruner
-    starting_epoch: 0
+    starting_epoch: 1
     ending_epoch: 10
     frequency: 1
   - pruner:
       instance_name : unzip_pruner
-    starting_epoch: 0
+    starting_epoch: 1
     ending_epoch: 10
     frequency: 1
 
 # After completeing the pruning, we perform network thinning and continue fine-tuning.
+  - extension:
+      instance_name: net_thinner
+    epochs: [0]
   - extension:
       instance_name: net_thinner
     epochs: [11]

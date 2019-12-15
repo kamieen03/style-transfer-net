@@ -164,7 +164,7 @@ class Compressor(object):
                 f.write(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                         f'Batch: [{batch_i+1}/{batch_num}] ' +
                         f'Loss: {loss:.6f} contentLoss: {content_loss:.6f} styleLoss: {style_loss:.6f}\n')
-        f.write(f'mean validation loss: {np.mean(np.array(losses))}')
+        f.write(f'mean validation loss: {np.mean(np.array(losses))}\n')
         return np.mean(np.array(losses))
 
 
