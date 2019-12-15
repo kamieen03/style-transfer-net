@@ -129,10 +129,11 @@ while(True):
         transfer = dec(feature)
         #transfer = dec(cF)
 
-        cF_loss = vgg5(content)
-        tF = vgg5(transfer)
-        loss,styleLoss,contentLoss = criterion(tF,sF_loss,cF_loss)
-        print(loss.item(), styleLoss.item(), contentLoss.item())
+        if '-l' in sys.argv:
+            cF_loss = vgg5(content)
+            tF = vgg5(transfer)
+            loss,styleLoss,contentLoss = criterion(tF,sF_loss,cF_loss)
+            print(loss.item(), styleLoss.item(), contentLoss.item())
         transfer = transfer.clamp(0,1).squeeze(0)*255
         transfer = transfer.type(torch.uint8).data.cpu().numpy()
         transfer = transfer.transpose((1,2,0))
