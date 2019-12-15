@@ -16,7 +16,7 @@ import torch.backends.cudnn as cudnn
 import torchvision.transforms as transforms
 
 PARAMETRIC = False
-if len(sys.argv) > 1 and sys.argv[1] == '-p':
+if len(sys.argv) > 1 and '-p' in sys.argv:
     PARAMETRIC = True
 
 if PARAMETRIC:
@@ -30,14 +30,14 @@ from libs.models import encoder5
 
 WIDTH = 0.5
 if PARAMETRIC:
-    VGG_C_PATH  = f'models/pruned/vgg_c_r31.pth'
-    VGG_S_PATH  = f'models/pruned/vgg_s_r31.pth'
-    DEC_PATH    = f'models/pruned/dec_r31.pth'
-    MATRIX_PATH = f'models/pruned/matrix_r31.pth'
+    VGG_C_PATH  = f'models/pruned/matrix/vgg_c_r31.pth'
+    VGG_S_PATH  = f'models/pruned/matrix/vgg_s_r31.pth'
+    DEC_PATH    = f'models/pruned/matrix/dec_r31.pth'
+    MATRIX_PATH = f'models/pruned/matrix/matrix_r31.pth'
 else:
-    VGG_C_PATH   = 'models/regular/vgg_r31.pth'
-    VGG_S_PATH   = 'models/regular/vgg_r31.pth'
-    DEC_PATH     = 'models/regular/dec_r31.pth'
+    VGG_C_PATH   = 'models/pruned/autoencoder/vgg_r31.pth'
+    VGG_S_PATH   = 'models/pruned/autoencoder/vgg_r31.pth'
+    DEC_PATH     = 'models/pruned/autoencoder/dec_r31.pth'
     MATRIX_PATH  = 'models/regular/r31.pth'
 LOSS_MODULE_PATH = 'models/regular/vgg_r51.pth'
 
@@ -125,9 +125,9 @@ while(True):
     with torch.no_grad():
         cF = vgg_c(content)
         #torch.cuda.synchronize()
-        feature = matrix(cF,sF)
-        transfer = dec(feature)
-        #transfer = dec(cF)
+        #feature = matrix(cF,sF)
+        #transfer = dec(feature)
+        transfer = dec(cF)
 
         if '-l' in sys.argv:
             cF_loss = vgg5(content)
