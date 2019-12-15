@@ -31,7 +31,7 @@ from libs.models import encoder5
 WIDTH = 0.5
 if PARAMETRIC:
     VGG_C_PATH  = f'models/pruned/vgg_c_r31.pth'
-    VGG_S_PATH  = f'models/pruned/vgg_s_r31.pth'
+    VGG_S_PATH  = f'models/pruned/vgg_c_r31.pth'
     DEC_PATH    = f'models/pruned/dec_r31.pth'
     MATRIX_PATH = f'models/pruned/matrix_r31.pth'
 else:
@@ -97,6 +97,7 @@ fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 out = cv2.VideoWriter('data/videos/out_vid.avi', fourcc, 20.0, (1024,576))
 
 style_tmp = cv2.imread(STYLE_PATH)
+style_tmp = cv2.cvtColor(style_tmp, cv2.COLOR_BGR2RGB)
 style_tmp = style_tmp.transpose((2,0,1))
 style_tmp = torch.from_numpy(style_tmp).unsqueeze(0)
 style.data.copy_(style_tmp)
@@ -115,6 +116,7 @@ tt = time()
 while(True):
     ret, frame = cap.read()
     if not ret: break
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame = frame.transpose((2,0,1))
     frame = torch.from_numpy(frame).unsqueeze(0)
     content.data.copy_(frame)
@@ -127,16 +129,17 @@ while(True):
         transfer = dec(feature)
         #transfer = dec(cF)
 
-        #cF_loss = vgg5(content)
-        #tF = vgg5(transfer)
-        #loss,styleLoss,contentLoss = criterion(tF,sF_loss,cF_loss)
-        #print(loss.item(), styleLoss.item(), contentLoss.item())
+        cF_loss = vgg5(content)
+        tF = vgg5(transfer)
+        loss,styleLoss,contentLoss = criterion(tF,sF_loss,cF_loss)
+        print(loss.item(), styleLoss.item(), contentLoss.item())
         transfer = transfer.clamp(0,1).squeeze(0)*255
         transfer = transfer.type(torch.uint8).data.cpu().numpy()
         transfer = transfer.transpose((1,2,0))
+        transfer = cv2.cvtColor(transfer, cv2.COLOR_BGR2RGB)
 
 
-        out.write(transfer)
+        #out.write(transfer)
         cv2.imshow('frame',transfer)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
