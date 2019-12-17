@@ -13,7 +13,7 @@ from libs.Criterion import LossCriterion
 from libs.parametric_models import encoder3, MulLayer, decoder3
 from libs.models import encoder5
 
-BATCH_SIZE = 4
+BATCH_SIZE = 8
 CROP_SIZE = 300
 WIDTH = 0.5
 ENCODER_SAVE_PATH = f'models/parametric/vgg_r31_W{WIDTH}.pth'
@@ -28,7 +28,7 @@ class Trainer(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/train', datapath+'wikiart/train')
+            datapath+'mscoco/prune_train', datapath+'wikiart/prune_train')
         self.content_valid, self.style_valid = self.load_datasets(
             datapath+'mscoco/validate', datapath+'wikiart/validate')
 
@@ -128,7 +128,7 @@ class Trainer(object):
                   f'Loss: {loss:.6f}')
 
     def validate_single_epoch(self, epoch, f):
-        batch_num = len(self.valid_train)      # number of batches in training epoch
+        batch_num = len(self.content_valid)      # number of batches in training epoch
         self.matrix.eval()
         losses = []
         
