@@ -23,7 +23,7 @@ MATRIX_SAVE_PATH = 'models/pruned/matrix/matrix_r31.pth'
 VGG_C_SAVE_PATH = 'models/pruned/matrix/vgg_c_r31.pth'
 VGG_S_SAVE_PATH = 'models/pruned/matrix/vgg_s_r31.pth'
 DECODER_SAVE_PATH = 'models/pruned/matrix/dec_r31.pth'
-EPOCHS = 21
+EPOCHS = 11
 WIDTH = 0.5
 
 class Compressor(object):
@@ -71,9 +71,9 @@ class Compressor(object):
         # set up loss function and optimizer
         self.criterion = LossCriterion(style_layers = ['r11','r21','r31', 'r41'],
                                   content_layers=['r41'],
-                                  style_weight=0.02,
+                                  style_weight=0.05,
                                   content_weight=1.0)
-        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4, momentum = 0.9)
 
         # set up compression scheduler
         self.compression_scheduler = distiller.file_config(self.model, self.optimizer,
@@ -104,7 +104,7 @@ class Compressor(object):
                 self.train_single_epoch(epoch, f)
                 val = self.validate_single_epoch(epoch, f)
                 self.compression_scheduler.on_epoch_end(epoch)
-                if epoch >= 12 and val < best_val:
+                if epoch >= 2 and val < best_val:
                     best_val = val
                     torch.save(self.model.vgg_c.state_dict(), VGG_C_SAVE_PATH)
                     torch.save(self.model.vgg_s.state_dict(), VGG_S_SAVE_PATH)
@@ -113,7 +113,7 @@ class Compressor(object):
 
     def train_single_epoch(self, epoch, f):
         batch_num = len(self.content_train)      # number of batches in training epoch
-        self.model.train()
+        self.model.matrix.train()
 
         for batch_i, (content, style) in enumerate(zip(self.content_train, self.style_train)):
             self.compression_scheduler.on_minibatch_begin(epoch, batch_i, batch_num, self.optimizer)
