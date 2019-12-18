@@ -28,7 +28,7 @@ class Trainer(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/prune_train', datapath+'wikiart/prune_train')
+            datapath+'mscoco/train', datapath+'wikiart/train')
         self.content_valid, self.style_valid = self.load_datasets(
             datapath+'mscoco/validate', datapath+'wikiart/validate')
 
@@ -125,7 +125,7 @@ class Trainer(object):
                   f'ContentLoss: {contentLoss:.6f} ')
             f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f}')
+                  f'Loss: {loss:.6f}\n')
 
     def validate_single_epoch(self, epoch, f):
         batch_num = len(self.content_valid)      # number of batches in training epoch
@@ -148,14 +148,14 @@ class Trainer(object):
                 loss, styleLoss, contentLoss = self.criterion(tF_loss, sF_loss, cF_loss)
 
                 losses.append(loss.item())
-                print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                       f'Batch: [{batch_i+1}/{batch_num}] ' +
                       f'Loss: {loss:.6f} '+
                       f'StyleLoss: {styleLoss:.6f} ' + 
                       f'ContentLoss: {contentLoss:.6f} ')
-                f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                f.write(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                       f'Batch: [{batch_i+1}/{batch_num}] ' +
-                      f'Loss: {loss:.6f}')
+                      f'Loss: {loss:.6f}\n')
         return np.mean(np.array(losses))
 
 
