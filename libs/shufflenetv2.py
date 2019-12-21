@@ -169,7 +169,7 @@ class ShuffleNetV2Encoder(nn.Module):
         x = self.maxpool(x)
         x = self.stage2(x)
         x = self.stage3(x)
-        x = self.stage4(x)
+        #x = self.stage4(x)
         #x = self.conv5(x)
         #x = x.mean([2, 3])  # globalpool
         #x = self.fc(x)
@@ -187,7 +187,7 @@ class ShuffleNetV2Decoder(nn.Module):
 
         output_channels = self._stage_out_channels[0]
 
-        stage_names = ['stage{}'.format(i) for i in [4, 3, 2, 1]]
+        stage_names = ['stage{}'.format(i) for i in [3, 2]]
         for name, repeats, output_channels in zip(
                 stage_names, stages_repeats, self._stage_out_channels):
             seq = []
@@ -209,7 +209,7 @@ class ShuffleNetV2Decoder(nn.Module):
         )
 
     def forward(self, x):
-        x = self.stage4(x)
+        #x = self.stage4(x)
         x = self.stage3(x)
         x = self.stage2(x)
         #x = self.stage1(x)
@@ -248,7 +248,7 @@ def shufflenet_v2_x1_encoder(**kwargs):
 
 
 def shufflenet_v2_x1_decoder():
-   return ShuffleNetV2Decoder([4, 8, 4], [232, 116, 24], 464)
+   return ShuffleNetV2Decoder([8, 4], [116, 24], 232)
 
 
 class ShuffleNetV2AutoEncoder(nn.Module):
