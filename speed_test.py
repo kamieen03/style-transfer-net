@@ -12,6 +12,8 @@ import sys
 from libs.Loader import Dataset
 from libs.Criterion import LossCriterion
 from libs.utils import makeVideo
+from libs import shufflenetv2
+
 import torch.backends.cudnn as cudnn
 import torchvision.transforms as transforms
 
@@ -30,10 +32,10 @@ from libs.models import encoder5
 
 WIDTH = 0.5
 if PARAMETRIC:
-    VGG_C_PATH  = f'models/pruned/matrix/vgg_c_r31.pth'
-    VGG_S_PATH  = f'models/pruned/matrix/vgg_s_r31.pth'
-    DEC_PATH    = f'models/pruned/matrix/dec_r31.pth'
-    MATRIX_PATH = f'models/pruned/matrix/matrix_r31.pth'
+    VGG_C_PATH  = f'models/parametric/vgg_r31_W0.5.pth'
+    VGG_S_PATH  = f'models/parametric/vgg_r31_W0.5.pth'
+    DEC_PATH    = f'models/parametric/dec_r31_W0.5.pth'
+    MATRIX_PATH = f'models/parametric/matrix_r31_W0.5.pth'
 else:
     VGG_C_PATH   = 'models/pruned/autoencoder/vgg_r31.pth'
     VGG_S_PATH   = 'models/pruned/autoencoder/vgg_r31.pth'
@@ -111,6 +113,16 @@ criterion = LossCriterion(style_layers = ['r11','r21','r31', 'r41'],
                           style_weight=0.02,
                           content_weight=1.0)
 
+#import timm
+#from torchvision import models
+mm = shufflenetv2.ShuffleNetV2AutoEncoder()
+#mm.load_state_dict(torch.load('models/regular/shufflenetv2_x1.pth'))
+mm.eval().cuda()
+summary(mm,(3,1024,576))
+#nn = shufflenet_v2_x1_decoder()
+#mm = timm.create_model('mobilenetv3_100', pretrained=True).eval()
+#summary(mm, (3, 1024, 576))
+
 i = 0
 tt = time()
 while(True):
@@ -123,11 +135,16 @@ while(True):
     content = content/255.0
 
     with torch.no_grad():
+        torch.cuda.synchronize()
+        xx = time()
+        temp = mm(content)
+        torch.cuda.synchronize()
+        print('test model', time() - xx, temp.shape)
         cF = vgg_c(content)
-        #torch.cuda.synchronize()
-        #feature = matrix(cF,sF)
-        #transfer = dec(feature)
-        transfer = dec(cF)
+        torch.cuda.synchronize()
+        feature = matrix(cF,sF)
+        transfer = dec(feature)
+        #transfer = dec(cF)
 
         if '-l' in sys.argv:
             cF_loss = vgg5(content)
