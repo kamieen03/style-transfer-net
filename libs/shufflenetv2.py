@@ -187,7 +187,7 @@ class ShuffleNetV2Decoder(nn.Module):
 
         output_channels = self._stage_out_channels[0]
 
-        stage_names = ['stage{}'.format(i) for i in [4, 3, 2]]
+        stage_names = ['stage{}'.format(i) for i in [4, 3, 2, 1]]
         for name, repeats, output_channels in zip(
                 stage_names, stages_repeats, self._stage_out_channels):
             seq = []
@@ -198,17 +198,25 @@ class ShuffleNetV2Decoder(nn.Module):
             input_channels = output_channels
 
         self.unpool = nn.UpsamplingNearest2d(scale_factor=2)
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(input_channels, input_channels, 3, 1, 1, bias=False),
+            nn.BatchNorm2d(input_channels),
+            nn.ReLU(inplace=True)
+        )
 
-        self.conv = nn.Sequential(
-            nn.ConvTranspose2d(input_channels, 3, 3, 2, 0, bias=False),
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(input_channels, 3, 3, 1, 1, bias=False),
         )
 
     def forward(self, x):
         x = self.stage4(x)
         x = self.stage3(x)
         x = self.stage2(x)
+        #x = self.stage1(x)
         x = self.unpool(x)
-        x = self.conv(x)
+        x = self.conv1(x)
+        x = self.unpool(x)
+        x = self.conv2(x)
         return x
 
 
