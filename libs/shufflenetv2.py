@@ -91,12 +91,12 @@ class DecoderResidual(nn.Module):
             self.branch1 = nn.Sequential()
             self.branch2 = nn.Sequential(
                 nn.Conv2d(branch_features, branch_features, kernel_size=1, stride=1, padding=0, bias=False),
-                #nn.BatchNorm2d(branch_features),
+                nn.BatchNorm2d(branch_features),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(branch_features, branch_features, 3, 1, 1, bias=False, groups=branch_features),
-                #nn.BatchNorm2d(branch_features),
+                nn.BatchNorm2d(branch_features),
                 nn.Conv2d(branch_features, branch_features, kernel_size=1, stride=1, padding=0, bias=False),
-                #nn.BatchNorm2d(branch_features),
+                nn.BatchNorm2d(branch_features),
                 nn.ReLU(inplace=True)
             )
         else:
@@ -105,12 +105,12 @@ class DecoderResidual(nn.Module):
             self.unpool = nn.UpsamplingNearest2d(scale_factor=2)
             self.branch = nn.Sequential(
                 nn.Conv2d(inp, oup, kernel_size=1, stride=1, padding=0, bias=False),
-                #nn.BatchNorm2d(oup),
+                nn.BatchNorm2d(oup),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(oup, oup, 3, 1, 1, bias=False, groups=oup),
-                #nn.BatchNorm2d(oup),
+                nn.BatchNorm2d(oup),
                 nn.Conv2d(oup, oup, kernel_size=1, stride=1, padding=0, bias=False),
-                #nn.BatchNorm2d(oup),
+                nn.BatchNorm2d(oup),
                 nn.ReLU(inplace=True)
             )
                     

@@ -13,7 +13,7 @@ from libs.Loader import Dataset
 from libs.shufflenetv2 import ShuffleNetV2AutoEncoder
 
 BATCH_SIZE = 16
-CROP_SIZE = 416
+CROP_SIZE = 640
 ENCODER_PATH      = f'models/regular/shufflenetv2_x1_encoder.pth'
 DECODER_SAVE_PATH = f'models/regular/shufflenetv2_x1_decoder.pth'
 EPOCHS = 20
@@ -102,7 +102,7 @@ class Trainer(object):
                 f.write(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                       f'Batch: [{batch_i+1}/{batch_num}] ' +
                       f'Loss: {loss:.6f}\n')
-        f.write('Mean:', np.mean(np.array(losses)))
+        f.write(f'Mean: {np.mean(np.array(losses))}\n')
         return np.mean(np.array(losses))
 
 
