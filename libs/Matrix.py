@@ -49,7 +49,7 @@ class MulLayer(nn.Module):
             self.unzip = nn.Conv2d(matrixSize,256,1,1,0)
         self.transmatrix = None
 
-    def forward(self, cF,sF,trans=True):
+    def forward(self, cF,sF,alpha=1.0,trans=True):
         #cFBK = cF.clone()
         cb,cc,ch,cw = cF.size()
         cFF = cF.view(cb,cc,-1)
@@ -58,6 +58,7 @@ class MulLayer(nn.Module):
         cMean = cMean.expand_as(cF)
         cF = cF - cMean
 
+        sF = alpha*sF + (1-alpha)*cF
         sb,sc,sh,sw = sF.size()
         sFF = sF.view(sb,sc,-1)
         sMean = torch.mean(sFF,dim=2,keepdim=True)
