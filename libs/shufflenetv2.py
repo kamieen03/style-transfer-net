@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from time import time
 
 
 __all__ = [
@@ -187,7 +188,7 @@ class ShuffleNetV2Decoder(nn.Module):
 
         output_channels = self._stage_out_channels[0]
 
-        stage_names = ['stage{}'.format(i) for i in [3, 2]]
+        stage_names = ['stage{}'.format(i) for i in [4, 3, 2]]
         for name, repeats, output_channels in zip(
                 stage_names, stages_repeats, self._stage_out_channels):
             seq = []
@@ -198,23 +199,16 @@ class ShuffleNetV2Decoder(nn.Module):
             input_channels = output_channels
 
         self.unpool = nn.UpsamplingNearest2d(scale_factor=2)
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(input_channels, input_channels, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(input_channels),
-            nn.ReLU(inplace=True)
-        )
-
         self.conv2 = nn.Sequential(
-            nn.Conv2d(input_channels, 3, 3, 1, 1, bias=False),
+            nn.Conv2d(input_channels, 8, 3, 1, 1, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(8, 3, 3, 1, 1, bias=True),
         )
 
     def forward(self, x):
-        #x = self.stage4(x)
+        x = self.stage4(x)
         x = self.stage3(x)
         x = self.stage2(x)
-        #x = self.stage1(x)
-        x = self.unpool(x)
-        x = self.conv1(x)
         x = self.unpool(x)
         x = self.conv2(x)
         return x
@@ -248,7 +242,7 @@ def shufflenet_v2_x1_encoder(**kwargs):
 
 
 def shufflenet_v2_x1_decoder():
-   return ShuffleNetV2Decoder([8, 4], [116, 24], 232)
+   return ShuffleNetV2Decoder([8, 4, 4], [116, 24, 16], 232)
 
 
 class ShuffleNetV2AutoEncoder(nn.Module):
