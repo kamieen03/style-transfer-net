@@ -129,10 +129,6 @@ class ShuffleNetV2Encoder(nn.Module):
         num_classes=1000, inverted_residual=EncoderResidual):
         super(ShuffleNetV2Encoder, self).__init__()
 
-        if len(stages_repeats) != 3:
-            raise ValueError('expected stages_repeats as list of 3 positive ints')
-        if len(stages_out_channels) != 5:
-            raise ValueError('expected stages_out_channels as list of 5 positive ints')
         self._stage_out_channels = stages_out_channels
 
         input_channels = 3
@@ -144,9 +140,7 @@ class ShuffleNetV2Encoder(nn.Module):
         )
         input_channels = output_channels
 
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-
-        stage_names = ['stage{}'.format(i) for i in [2, 3, 4]]
+        stage_names = ['stage{}'.format(i) for i in [1, 2, 3]]
         for name, repeats, output_channels in zip(
                 stage_names, stages_repeats, self._stage_out_channels[1:]):
             seq = [inverted_residual(input_channels, output_channels, 2)]
@@ -155,19 +149,12 @@ class ShuffleNetV2Encoder(nn.Module):
             setattr(self, name, nn.Sequential(*seq))
             input_channels = output_channels
 
-        output_channels = self._stage_out_channels[-1]
-        self.conv5 = nn.Sequential(
-            nn.Conv2d(input_channels, output_channels, 1, 1, 0, bias=False),
-            nn.BatchNorm2d(output_channels),
-            nn.ReLU(inplace=True),
-        )
-
-        self.fc = nn.Linear(output_channels, num_classes)
 
     def _forward_impl(self, x):
         # See note [TorchScript super()]
         x = self.conv1(x)
-        x = self.maxpool(x)
+        #x = self.maxpool(x)
+        x = self.stage1(x)
         x = self.stage2(x)
         x = self.stage3(x)
         #x = self.stage4(x)
@@ -239,7 +226,7 @@ def shufflenet_v2_x1_encoder(**kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return ShuffleNetV2Encoder([4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
+    return ShuffleNetV2Encoder([4, 4, 8], [24, 64, 116, 232], **kwargs)
 
 
 def shufflenet_v2_x1_decoder():
