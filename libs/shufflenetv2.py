@@ -201,6 +201,7 @@ class ShuffleNetV2Decoder(nn.Module):
         self.unpool = nn.UpsamplingNearest2d(scale_factor=2)
         self.conv2 = nn.Sequential(
             nn.Conv2d(input_channels, 8, 3, 1, 1, bias=True),
+            nn.BatchNorm2d(8),
             nn.ReLU(inplace=True),
             nn.Conv2d(8, 3, 3, 1, 1, bias=True),
         )
