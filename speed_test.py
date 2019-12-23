@@ -30,7 +30,6 @@ vgg5 = encoder5()
 vgg5.load_state_dict(torch.load(LOSS_MODULE_PATH))
 vgg5.cuda().eval()
 
-
 enc = shufflenetv2.shufflenet_v2_x1_encoder()
 dec = shufflenetv2.shufflenet_v2_x1_decoder()
 enc.load_state_dict(torch.load('models/regular/shufflenetv2_x1_encoder.pth'))
