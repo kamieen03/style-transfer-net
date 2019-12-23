@@ -16,7 +16,7 @@ from torch import nn
 from libs.Autoencoder import Autoencoder
 from libs.Loader import Dataset
 
-BATCH_SIZE = 16 
+BATCH_SIZE = 8 
 CROP_SIZE = 300
 VGG_SAVE_PATH = 'models/pruned/autoencoder/vgg_r31.pth'
 DECODER_SAVE_PATH = 'models/pruned/autoencoder/dec_r31.pth'
@@ -32,7 +32,7 @@ class Compressor(object):
 
         # set up datasets
         self.content_train = self.load_dataset(
-            datapath+'mscoco/prune_train')
+            datapath+'mscoco/small')
         self.content_valid = self.load_dataset(
             datapath+'mscoco/validate')
 
@@ -44,7 +44,7 @@ class Compressor(object):
         self.model.cuda()
 
         self.criterion = nn.MSELoss()
-        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4, momentum=0.9)
 
         # set up compression scheduler
         self.compression_scheduler = distiller.file_config(self.model, self.optimizer,
