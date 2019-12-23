@@ -252,8 +252,10 @@ class CNN(nn.Module):
         super(CNN,self).__init__()
             # 256x64x64
         self.convs = nn.Sequential(nn.Conv2d(232,int(128*W),3,1,1),
+                                   nn.BatchNorm2d(int(128*W)),
                                    nn.ReLU(inplace=True),
                                    nn.Conv2d(int(128*W),int(64*W),3,1,1),
+                                   nn.BatchNorm2d(int(64*W)),
                                    nn.ReLU(inplace=True),
                                    nn.Conv2d(int(64*W),matrixSize,3,1,1))
 
