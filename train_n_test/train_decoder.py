@@ -12,9 +12,9 @@ import torch
 from libs.Loader import Dataset
 from libs.shufflenetv2 import ShuffleNetV2AutoEncoder
 
-BATCH_SIZE = 16
-CROP_SIZE = 640
-ENCODER_PATH      = f'models/regular/shufflenetv2_x1_encoder.pth'
+BATCH_SIZE = 32
+CROP_SIZE = 400
+ENCODER_SAVE_PATH = f'models/regular/shufflenetv2_x1_encoder.pth'
 DECODER_SAVE_PATH = f'models/regular/shufflenetv2_x1_decoder.pth'
 EPOCHS = 20
 
@@ -29,17 +29,17 @@ class Trainer(object):
         # set up model
         self.model = ShuffleNetV2AutoEncoder().cuda()
         # load encoder
-        self.model.encoder.load_state_dict(torch.load(ENCODER_PATH))
-        self.model.encoder.eval()
-        for param in self.model.encoder.parameters():
-            param.requires_grad = False
+        #self.model.encoder.eval()
+        #for param in self.model.encoder.parameters():
+        #    param.requires_grad = False
         
         # load decoder
         try:
             self.model.decoder.load_state_dict(torch.load(DECODER_SAVE_PATH))
+            self.model.encoder.load_state_dict(torch.load(ENCODER_SAVE_PATH))
         except:
             print("Decoder weights not found. Proceeding with new ones...")
-        self.model.decoder.train()
+        self.model.train()
 
 
         self.criterion = nn.MSELoss()
@@ -57,18 +57,30 @@ class Trainer(object):
 
     def train(self):
         best_val = 1e9
+        flag = False
         with open('shufflenetv2_log.txt', 'w+') as f:
             for epoch in range(1, EPOCHS+1): # count from one
+                #if epoch == 2:
+                #    for g in self.optimizer.param_groups:
+                #        g['lr'] = 1e-3
+                #if epoch == 4:
+                #    for g in self.optimizer.param_groups:
+                #        g['lr'] = 1e-4
                 self.train_single_epoch(epoch, f)
                 val = self.validate_single_epoch(epoch, f)
                 if val < best_val:
                     best_val = val
                     torch.save(self.model.decoder.state_dict(), DECODER_SAVE_PATH)
+                    torch.save(self.model.encoder.state_dict(), ENCODER_SAVE_PATH)
+                #if val < 0.01 and not flag:
+                #    flag = True
+                #    for g in self.optimizer.param_groups:
+                #        g['lr'] = 1e-5
 
 
     def train_single_epoch(self, epoch, f):
         batch_num = len(self.train_set)      # number of batches in training epoch
-        self.model.decoder.train()
+        self.model.train()
 
         for batch_i, content in enumerate(self.train_set):
             content = content[0].cuda() 
@@ -88,7 +100,7 @@ class Trainer(object):
 
     def validate_single_epoch(self, epoch, f):
         batch_num = len(self.valid_set)      # number of batches in training epoch
-        self.model.decoder.eval()
+        self.model.eval()
         losses = []
         with torch.no_grad():
             for batch_i, content in enumerate(self.valid_set):
