@@ -15,9 +15,9 @@ from libs.models import encoder5
 
 BATCH_SIZE = 8
 CROP_SIZE = 300
-WIDTH = 0.5
-ENCODER_SAVE_PATH = f'models/parametric/vgg_r31_W{WIDTH}.pth'
-DECODER_SAVE_PATH = f'models/parametric/dec_r31_W{WIDTH}.pth'
+WIDTH = 0.25
+ENCODER_SAVE_PATH = f'models/pruned/autoencoder/vgg_r31.pth'
+DECODER_SAVE_PATH = f'models/pruned/autoencoder/dec_r31.pth'
 MATRIX_SAVE_PATH  = f'models/parametric/matrix_r31_W{WIDTH}.pth'
 LOSS_MODULE_PATH  = 'models/regular/vgg_r51.pth'
 EPOCHS = 20
@@ -33,7 +33,7 @@ class Trainer(object):
             datapath+'mscoco/validate', datapath+'wikiart/validate')
 
 
-        self.matrix = MulLayer('r31', WIDTH)
+        self.matrix = MulLayer(WIDTH)
         self.matrix.train()
         self.matrix.cuda()
         try:
@@ -68,7 +68,7 @@ class Trainer(object):
                                   content_layers=['r41'],
                                   style_weight=0.02,
                                   content_weight=1.0)
-        self.optimizer = optim.Adam(self.matrix.parameters(), lr=1e-4)
+        self.optimizer = optim.Adam(self.matrix.parameters(), lr=1e-3)
 
     def load_datasets(self, content_path, style_path):
         """Load the datasets"""

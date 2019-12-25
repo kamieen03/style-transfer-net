@@ -112,7 +112,7 @@ class decoder3(nn.Module):
         return out
 
 class CNN(nn.Module):
-    def __init__(self,layer,W,matrixSize=32):
+    def __init__(self,W,matrixSize=32):
         super(CNN,self).__init__()
             # 256x64x64
         self.convs = nn.Sequential(nn.Conv2d(int(256*W),int(128*W),3,1,1),
@@ -138,10 +138,10 @@ class CNN(nn.Module):
         return self.fc(out)
 
 class MulLayer(nn.Module):
-    def __init__(self,layer,W,matrixSize=32):
+    def __init__(self,W,matrixSize=32):
         super(MulLayer,self).__init__()
-        self.snet = CNN(layer,W,matrixSize)
-        self.cnet = CNN(layer,W,matrixSize)
+        self.snet = CNN(W,matrixSize)
+        self.cnet = CNN(W,matrixSize)
         self.matrixSize = matrixSize
 
         self.compress = nn.Conv2d(int(256*W),matrixSize,1,1,0)
