@@ -12,11 +12,11 @@ import torch
 from libs.Loader import Dataset
 from libs.Autoencoder import Autoencoder
 
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 CROP_SIZE = 400
-WIDTH = 0.5
-ENCODER_SAVE_PATH = f'models/parametric/vgg_r31_W{WIDTH}.pth'
-DECODER_SAVE_PATH = f'models/parametric/dec_r31_W{WIDTH}.pth'
+WIDTH = 0.25
+ENCODER_SAVE_PATH = f'models/pruned/autoencoder/vgg_r31.pth'
+DECODER_SAVE_PATH = f'models/pruned/autoencoder/dec_r31.pth'
 EPOCHS = 100
 
 class Trainer(object):
