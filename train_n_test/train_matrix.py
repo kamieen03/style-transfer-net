@@ -20,7 +20,7 @@ ENCODER_SAVE_PATH = f'models/pruned/autoencoder/vgg_r31.pth'
 DECODER_SAVE_PATH = f'models/pruned/autoencoder/dec_r31.pth'
 MATRIX_SAVE_PATH  = f'models/parametric/matrix_r31_W{WIDTH}.pth'
 LOSS_MODULE_PATH  = 'models/regular/vgg_r51.pth'
-EPOCHS = 20
+EPOCHS = 10
 
 class Trainer(object):
     def __init__(self):
