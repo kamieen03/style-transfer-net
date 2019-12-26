@@ -29,7 +29,7 @@ class CNN(nn.Module):
         #print(1, b,c,h,w)
         out = out.view(b,c,-1)
         # 32x64
-        out = torch.bmm(out,out.transpose(1,2)).div(144*256)
+        out = torch.bmm(out,out.transpose(1,2)).div(h*w)
         #print(2,out.size())
         # 32x32
         out = out.view(1,-1)
