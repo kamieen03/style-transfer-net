@@ -66,9 +66,9 @@ class Trainer(object):
         # set up loss function and optimizer
         self.criterion = LossCriterion(style_layers = ['r11','r21','r31','r41'],
                                   content_layers=['r41'],
-                                  style_weight=0.2,
+                                  style_weight=0.02,
                                   content_weight=1.0)
-        self.optimizer = optim.Adam(self.matrix.parameters(), lr=1e-3)
+        self.optimizer = optim.Adam(self.matrix.parameters(), lr=1e-4)
 
     def load_datasets(self, content_path, style_path):
         """Load the datasets"""
@@ -88,7 +88,7 @@ class Trainer(object):
 
     def train(self):
         best_val = 1e9
-        with open('log_matrix2.txt', 'w+') as f:
+        with open('log_matrix3.txt', 'w+') as f:
             for epoch in range(1, EPOCHS+1): # count from one
                 self.train_single_epoch(epoch, f)
                 val = self.validate_single_epoch(epoch, f)
