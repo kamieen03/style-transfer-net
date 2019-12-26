@@ -37,9 +37,9 @@ class Compressor(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/prune_train', datapath+'wikiart/prune_train')
+            datapath+'mscoco/small', datapath+'wikiart/small')
         self.content_valid, self.style_valid = self.load_datasets(
-            datapath+'mscoco/validate', datapath+'wikiart/validate')
+            datapath+'mscoco/small', datapath+'wikiart/small')
 
         # set up model and loss network
         self.model = Transfer3()
@@ -64,7 +64,7 @@ class Compressor(object):
                                   content_layers=['r41'],
                                   style_weight=0.02,
                                   content_weight=1.0)
-        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4, momentum=0.9)
 
         # set up compression scheduler
         self.compression_scheduler = distiller.file_config(self.model, self.optimizer,
@@ -95,7 +95,7 @@ class Compressor(object):
                 self.train_single_epoch(epoch, f)
                 val = self.validate_single_epoch(epoch, f)
                 self.compression_scheduler.on_epoch_end(epoch)
-                if epoch >= 12 and val < best_val:
+                if val < best_val:
                     best_val = val
                     torch.save(self.model.vgg_c.state_dict(), VGG_C_SAVE_PATH)
                     torch.save(self.model.vgg_s.state_dict(), VGG_S_SAVE_PATH)

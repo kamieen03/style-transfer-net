@@ -25,9 +25,9 @@ class CNN(nn.Module):
     def forward(self,x):
         out = self.convs(x)
         # 32x8x8
-        #b,c,h,w = out.size()
+        b,c,h,w = out.size()
         #print(1, b,c,h,w)
-        out = out.view(1,32,144*256)
+        out = out.view(b,c,-1)
         # 32x64
         out = torch.bmm(out,out.transpose(1,2)).div(144*256)
         #print(2,out.size())
@@ -58,7 +58,7 @@ class MulLayer(nn.Module):
         cMean = cMean.unsqueeze(3)
         cF = cF - cMean
 
-        sF = alpha*sF + (1-alpha)*cF
+        #sF = alpha*sF + (1-alpha)*cF
         sb,sc,sh,sw = sF.size()
         sFF = sF.view(sb,sc,-1)
         sMean = torch.mean(sFF,dim=2,keepdim=True)
@@ -69,7 +69,8 @@ class MulLayer(nn.Module):
 
 
         compress_content = self.compress(cF)
-        compress_content = compress_content.view(1,32,-1)
+        b,c,h,w = compress_content.size()
+        compress_content = compress_content.view(b,c,-1)
 
         sMatrix = self.snet(sF)
         cMatrix = self.cnet(cF)
