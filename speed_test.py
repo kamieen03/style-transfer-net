@@ -19,30 +19,38 @@ import torchvision.transforms as transforms
 from libs.models import encoder5
 
 RGB = '-rgb' in sys.argv
+PARAMETRIC = '-p' in sys.argv
 
-WIDTH = 0.5
+WIDTH = 0.25
 LOSS_MODULE_PATH = 'models/regular/vgg_r51.pth'
 
-STYLE_PATH  = 'data/style/1024x576/27.jpg'
+STYLE_PATH  = 'data/style/1024x576/in2.jpg'
 
 ################# MODEL #################
+if PARAMETRIC:
+    from libs.parametric_models import encoder3, decoder3, MulLayer
+    e3 = encoder3(0.25).eval().cuda()
+    d3 = decoder3(0.25).eval().cuda()
+    e3.load_state_dict(torch.load('models/pruned/autoencoder/vgg_r31.pth'))
+    d3.load_state_dict(torch.load('models/pruned/autoencoder/dec_r31.pth'))
+
+    mat3 = MulLayer(0.25).eval().cuda()
+    mat3.load_state_dict(torch.load('models/parametric/matrix_r31_W0.25.pth'))
+else:
+    from libs.models import encoder3, decoder3 
+    from libs.Matrix import MulLayer
+    e3 = encoder3().eval().cuda()
+    d3 = decoder3().eval().cuda()
+    e3.load_state_dict(torch.load('models/regular/vgg_r31.pth'))
+    d3.load_state_dict(torch.load('models/regular/dec_r31.pth'))
+
+    mat3 = MulLayer('r31').eval().cuda()
+    mat3.load_state_dict(torch.load('models/regular/r31.pth'))
+
 vgg5 = encoder5()
 vgg5.load_state_dict(torch.load(LOSS_MODULE_PATH))
 vgg5.cuda().eval()
 
-enc = shufflenetv2.shufflenet_v2_x1_encoder()
-dec = shufflenetv2.shufflenet_v2_x1_decoder()
-enc.load_state_dict(torch.load('models/regular/shufflenetv2_x1_encoder.pth'))
-dec.load_state_dict(torch.load('models/regular/shufflenetv2_x1_decoder.pth'))
-enc.eval().cuda()
-dec.eval().cuda()
-#summary(mm,(3,1024,576))
-
-mat = shufflenetv2.MulLayer()
-mat.eval().cuda()
-
-################# GLOBAL VARIABLE #################
-content = torch.Tensor(1,3,576,1024).cuda()
 
 ################# GPU  #################
 cap = cv2.VideoCapture('data/videos/tram.avi')   #assume it's 576x1024 (HxW)
@@ -57,6 +65,9 @@ criterion = LossCriterion(style_layers = ['r11','r21','r31', 'r41'],
 
 
 ################## STYLE ####################3
+
+
+
 style = cv2.imread(STYLE_PATH)
 if RGB:
     style = cv2.cvtColor(style, cv2.COLOR_BGR2RGB)
@@ -64,7 +75,7 @@ style = style.transpose((2,0,1))
 style = torch.from_numpy(style).unsqueeze(0).cuda()
 style = style / 255.0
 with torch.no_grad():
-    sF = enc(style)
+    sF = e3(style)
     sF_loss = vgg5(style)
 
 i = 0
@@ -77,16 +88,23 @@ with torch.no_grad():
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = frame.transpose((2,0,1))
         frame = torch.from_numpy(frame).unsqueeze(0)
-        content.data.copy_(frame)
+        content = frame.cuda()
         content = content/255.0
+        torch.cuda.synchronize()
+        T = time()
+        transfer = e3(content)
+        transfer = mat3(transfer, sF)
+        transfer = d3(transfer)
+        torch.cuda.synchronize()
+        print(time()-T)
 
         #torch.cuda.synchronize()
-        xx = time()
-        transfer = enc(content)
+        #xx = time()
+        #transfer = enc(content)
         #transfer = mat(transfer, sF)
-        transfer = dec(transfer)
+        #transfer = dec(transfer)
         #torch.cuda.synchronize()
-        print('test model', time() - xx, transfer.shape)
+        #print('test model', time() - xx, transfer.shape)
         #cF = vgg_c(content)
         #torch.cuda.synchronize()
         #feature = matrix(cF,sF,0.5)
