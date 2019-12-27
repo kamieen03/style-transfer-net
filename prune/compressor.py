@@ -37,9 +37,9 @@ class Compressor(object):
 
         # set up datasets
         self.content_train, self.style_train = self.load_datasets(
-            datapath+'mscoco/small', datapath+'wikiart/small')
+            datapath+'mscoco/train', datapath+'wikiart/train')
         self.content_valid, self.style_valid = self.load_datasets(
-            datapath+'mscoco/small', datapath+'wikiart/small')
+            datapath+'mscoco/validate', datapath+'wikiart/validate')
 
         # set up model and loss network
         self.model = Transfer3()
@@ -147,7 +147,8 @@ class Compressor(object):
                 cF_loss = self.loss_module(content)
                 tF = self.loss_module(transfer)
                 loss, style_loss, content_loss = self.criterion(tF,sF_loss,cF_loss)
-                losses.append(loss.item())
+                if loss.item()<100:
+                    losses.append(loss.item())
 
                 print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                       f'Batch: [{batch_i+1}/{batch_num}] ' +

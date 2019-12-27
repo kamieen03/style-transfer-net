@@ -32,7 +32,7 @@ class CNN(nn.Module):
         out = torch.bmm(out,out.transpose(1,2)).div(h*w)
         #print(2,out.size())
         # 32x32
-        out = out.view(1,-1)
+        out = out.view(out.size(0),-1)
         return self.fc(out)
 
 class MulLayer(nn.Module):
