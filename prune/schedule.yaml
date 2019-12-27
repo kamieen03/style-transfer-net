@@ -1,17 +1,23 @@
 version: 1
 
 pruners:
+  half_prunner:
+    class: L1RankedStructureParameterPruner_AGP
+    initial_sparsity : 0.05
+    group_type: Filters
+    weights: [vgg_c.conv2.weight,
+              vgg_s.conv2.weight,
+              dec.conv10.weight]
+
   filter_pruner:
     class: L1RankedStructureParameterPruner_AGP
     initial_sparsity : 0.05
     final_sparsity: 0.75
     group_type: Filters
-    weights: [vgg_c.conv2.weight,
-              vgg_c.conv3.weight,
+    weights: [vgg_c.conv3.weight,
               vgg_c.conv4.weight,
               vgg_c.conv5.weight,
 #              vgg_c.conv6.weight,
-              vgg_s.conv2.weight,
               vgg_s.conv3.weight,
               vgg_s.conv4.weight,
               vgg_s.conv5.weight,
@@ -23,11 +29,10 @@ pruners:
               matrix.cnet.convs.0.weight,
               matrix.cnet.convs.2.weight,
 #              matrix.cnet.convs.4.weight,
-              matrx.unzip.weight,
+#              matrx.unzip.weight,
               dec.conv7.weight,
               dec.conv8.weight,
-              dec.conv9.weight,
-              dec.conv10.weight]
+              dec.conv9.weight]
 
   unzip_pruner:
     class: L1RankedStructureParameterPruner_AGP

@@ -62,7 +62,7 @@ class Compressor(object):
         # set up loss function and optimizer
         self.criterion = LossCriterion(style_layers = ['r11','r21','r31', 'r41'],
                                   content_layers=['r41'],
-                                  style_weight=0.02,
+                                  style_weight=0.1,
                                   content_weight=1.0)
         self.optimizer = optim.SGD(self.model.parameters(), lr=1e-4, momentum=0.9)
 
