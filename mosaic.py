@@ -13,23 +13,26 @@ import torchvision.transforms as transforms
 from libs.models import encoder5
 
 PARAMETRIC = '-p' in sys.argv
+V2 = 'v2' in sys.argv
 
 WIDTH = 0.25
 ################# MODEL #################
 if PARAMETRIC:
     from libs.parametric_models import encoder3, decoder3, MulLayer
-    e3c = encoder3(WIDTH).eval().cuda()
-    e3s = encoder3(WIDTH).eval().cuda()
-    d3 = decoder3(WIDTH).eval().cuda()
+    e3c = encoder3(WIDTH, V2).eval().cuda()
+    e3s = encoder3(WIDTH, V2).eval().cuda()
+    d3 = decoder3(WIDTH, V2).eval().cuda()
     mat3 = MulLayer(WIDTH).eval().cuda()
-    #e3c.load_state_dict(torch.load('models/pruned/vgg_c_r31.pth'))
-    #e3s.load_state_dict(torch.load('models/pruned/vgg_s_r31.pth'))
-    #d3.load_state_dict(torch.load('models/pruned/dec_r31.pth'))
-    #mat3.load_state_dict(torch.load('models/pruned/matrix_r31.pth'))
-    e3c.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_c_r31.pth'))
-    e3s.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_s_r31.pth'))
-    d3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/dec_r31.pth'))
-    mat3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/matrix_r31.pth'))
+    if not V2:
+        e3c.load_state_dict(torch.load('models/pruned/vgg_c_r31.pth'))
+        e3s.load_state_dict(torch.load('models/pruned/vgg_s_r31.pth'))
+        d3.load_state_dict(torch.load('models/pruned/dec_r31.pth'))
+        mat3.load_state_dict(torch.load('models/pruned/matrix_r31.pth'))
+    else:
+        e3c.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_c_r31.pth'))
+        e3s.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_s_r31.pth'))
+        d3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/dec_r31.pth'))
+        mat3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/matrix_r31.pth'))
 
 else:
     from libs.models import encoder3, decoder3 
@@ -143,6 +146,6 @@ print("Creating mosaic...")
 result = mosaic(contents, styles, stylized)
 result = result.astype(np.uint8)
 result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
-cv2.imwrite('mosaic.png', result)
+cv2.imwrite('mosaicv1.png', result)
 
 

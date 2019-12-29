@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class encoder3(nn.Module):
-    def __init__(self, W):
+    def __init__(self, W, v2):
         super(encoder3,self).__init__()   # W - width
         # vgg
         # 224 x 224
@@ -10,12 +10,12 @@ class encoder3(nn.Module):
         self.reflecPad1 = nn.ReflectionPad2d((1,1,1,1))
         # 226 x 226
 
-        self.conv2 = nn.Conv2d(3,int(64*W),3,1,0)
+        self.conv2 = nn.Conv2d(3,32 if v2 else int(64*W),3,1,0)
         self.relu2 = nn.ReLU(inplace=True)
         # 224 x 224
 
         self.reflecPad3 = nn.ReflectionPad2d((1,1,1,1))
-        self.conv3 = nn.Conv2d(int(64*W),int(64*W),3,1,0)
+        self.conv3 = nn.Conv2d(32 if v2 else int(64*W),int(64*W),3,1,0)
         self.relu3 = nn.ReLU(inplace=True)
         # 224 x 224
 
@@ -61,7 +61,7 @@ class encoder3(nn.Module):
         return out
 
 class decoder3(nn.Module):
-    def __init__(self, W):
+    def __init__(self, W, v2):
         super(decoder3,self).__init__()
         # decoder
         self.reflecPad7 = nn.ReflectionPad2d((1,1,1,1))
@@ -85,11 +85,11 @@ class decoder3(nn.Module):
         # 224 x 224
 
         self.reflecPad10 = nn.ReflectionPad2d((1,1,1,1))
-        self.conv10 = nn.Conv2d(int(64*W),int(64*W),3,1,0)
+        self.conv10 = nn.Conv2d(int(64*W),32 if v2 else int(64*W),3,1,0)
         self.relu10 = nn.ReLU(inplace=True)
 
         self.reflecPad11 = nn.ReflectionPad2d((1,1,1,1))
-        self.conv11 = nn.Conv2d(int(64*W),3,3,1,0)
+        self.conv11 = nn.Conv2d(32 if v2 else int(64*W),3,3,1,0)
 
     def forward(self,x):
         output = {}
@@ -115,11 +115,11 @@ class CNN(nn.Module):
     def __init__(self,W,matrixSize=32):
         super(CNN,self).__init__()
             # 256x64x64
-        self.convs = nn.Sequential(nn.Conv2d(int(256*W),int(256*W),3,1,1),
+        self.convs = nn.Sequential(nn.Conv2d(int(256*W),int(128*W),3,1,1),
                                    nn.ReLU(inplace=True),
-                                   nn.Conv2d(int(256*W),int(256*W),3,1,1),
+                                   nn.Conv2d(int(128*W),int(64*W),3,1,1),
                                    nn.ReLU(inplace=True),
-                                   nn.Conv2d(int(256*W),matrixSize,3,1,1))
+                                   nn.Conv2d(int(64*W),matrixSize,3,1,1))
 
         # 32x8x8
         self.fc = nn.Linear(matrixSize*matrixSize,matrixSize*matrixSize)
@@ -147,10 +147,10 @@ class MulLayer(nn.Module):
         self.compress = nn.Conv2d(int(256*W),matrixSize,1,1,0)
         self.unzip = nn.Conv2d(matrixSize,int(256*W),1,1,0)
         self.transmatrix = None
-        self.W = W
 
-    def forward(self, cF,sF,trans=True):
-        cFBK = cF.clone()
+    def forward(self, cF,sF, trans=True):
+
+        #cFBK = cF.clone()
         cb, cc, ch, cw = cF.size()
         cFF = cF.view(cb, cc, -1)
 
@@ -162,7 +162,7 @@ class MulLayer(nn.Module):
         sFF = sF.view(sb, sc, -1)
         sMean = torch.mean(sFF,dim=2,keepdim=True)
         sMean = sMean.unsqueeze(3)
-        sMeanC = sMean.expand_as(cF)
+        self.sMeanC = sMean.expand_as(cF)
         sMeanS = sMean.expand_as(sF)
         sF = sF - sMeanS
 
@@ -170,19 +170,14 @@ class MulLayer(nn.Module):
         b,c,h,w = compress_content.size()
         compress_content = compress_content.view(b,c,-1)
 
-        if(trans):
-            cMatrix = self.cnet(cF)
-            sMatrix = self.snet(sF)
+        cMatrix = self.cnet(cF)
+        sMatrix = self.snet(sF)
 
-            sMatrix = sMatrix.view(sMatrix.size(0),self.matrixSize,self.matrixSize)
-            cMatrix = cMatrix.view(cMatrix.size(0),self.matrixSize,self.matrixSize)
-            transmatrix = torch.bmm(sMatrix,cMatrix)
-            transfeature = torch.bmm(transmatrix,compress_content).view(b,c,h,w)
-            out = self.unzip(transfeature.view(b,c,h,w))
-            out = out + sMeanC
-            return out
-        else:
-            out = self.unzip(compress_content.view(b,c,h,w))
-            out = out + cMean
-            return out
+        sMatrix = sMatrix.view(sMatrix.size(0),self.matrixSize,self.matrixSize)
+        cMatrix = cMatrix.view(cMatrix.size(0),self.matrixSize,self.matrixSize)
+        self.transmatrix = torch.bmm(sMatrix,cMatrix)
+        transfeature = torch.bmm(self.transmatrix,compress_content).view(b,c,h,w)
+        out = self.unzip(transfeature.view(b,c,h,w))
+        out = out + self.sMeanC
+        return out
 
