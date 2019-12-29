@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ./utils/compile_full_model.py
 
-models=(vgg_c vgg_s matrix dec)
+models=(vgg_c vgg_s matrix decoder)
 
 for model in ${models[*]}
 do

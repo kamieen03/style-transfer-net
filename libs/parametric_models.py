@@ -7,14 +7,14 @@ class encoder3(nn.Module):
         # vgg
         # 224 x 224
         self.conv1 = nn.Conv2d(3,3,1,1,0)
-        self.reflecPad1 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad1 = nn.ZeroPad2d((1,1,1,1))
         # 226 x 226
 
         self.conv2 = nn.Conv2d(3,32 if v2 else int(64*W),3,1,0)
         self.relu2 = nn.ReLU(inplace=True)
         # 224 x 224
 
-        self.reflecPad3 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad3 = nn.ZeroPad2d((1,1,1,1))
         self.conv3 = nn.Conv2d(32 if v2 else int(64*W),int(64*W),3,1,0)
         self.relu3 = nn.ReLU(inplace=True)
         # 224 x 224
@@ -22,12 +22,12 @@ class encoder3(nn.Module):
         self.maxPool = nn.MaxPool2d(kernel_size=2,stride=2,return_indices = False)
         # 112 x 112
 
-        self.reflecPad4 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad4 = nn.ZeroPad2d((1,1,1,1))
         self.conv4 = nn.Conv2d(int(64*W),int(128*W),3,1,0)
         self.relu4 = nn.ReLU(inplace=True)
         # 112 x 112
 
-        self.reflecPad5 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad5 = nn.ZeroPad2d((1,1,1,1))
         self.conv5 = nn.Conv2d(int(128*W),int(128*W),3,1,0)
         self.relu5 = nn.ReLU(inplace=True)
         # 112 x 112
@@ -35,7 +35,7 @@ class encoder3(nn.Module):
         self.maxPool2 = nn.MaxPool2d(kernel_size=2,stride=2,return_indices = False)
         # 56 x 56
 
-        self.reflecPad6 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad6 = nn.ZeroPad2d((1,1,1,1))
         self.conv6 = nn.Conv2d(int(128*W),int(256*W),3,1,0)
         self.relu6 = nn.ReLU(inplace=True)
         # 56 x 56
@@ -64,7 +64,7 @@ class decoder3(nn.Module):
     def __init__(self, W, v2):
         super(decoder3,self).__init__()
         # decoder
-        self.reflecPad7 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad7 = nn.ZeroPad2d((1,1,1,1))
         self.conv7 = nn.Conv2d(int(256*W),int(128*W),3,1,0)
         self.relu7 = nn.ReLU(inplace=True)
         # 56 x 56
@@ -72,23 +72,23 @@ class decoder3(nn.Module):
         self.unpool = nn.UpsamplingNearest2d(scale_factor=2)
         # 112 x 112
 
-        self.reflecPad8 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad8 = nn.ZeroPad2d((1,1,1,1))
         self.conv8 = nn.Conv2d(int(128*W),int(128*W),3,1,0)
         self.relu8 = nn.ReLU(inplace=True)
         # 112 x 112
 
-        self.reflecPad9 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad9 = nn.ZeroPad2d((1,1,1,1))
         self.conv9 = nn.Conv2d(int(128*W),int(64*W),3,1,0)
         self.relu9 = nn.ReLU(inplace=True)
 
         self.unpool2 = nn.UpsamplingNearest2d(scale_factor=2)
         # 224 x 224
 
-        self.reflecPad10 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad10 = nn.ZeroPad2d((1,1,1,1))
         self.conv10 = nn.Conv2d(int(64*W),32 if v2 else int(64*W),3,1,0)
         self.relu10 = nn.ReLU(inplace=True)
 
-        self.reflecPad11 = nn.ReflectionPad2d((1,1,1,1))
+        self.reflecPad11 = nn.ZeroPad2d((1,1,1,1))
         self.conv11 = nn.Conv2d(32 if v2 else int(64*W),3,3,1,0)
 
     def forward(self,x):
@@ -127,14 +127,14 @@ class CNN(nn.Module):
     def forward(self,x):
         out = self.convs(x)
         # 32x8x8
-        b,c,h,w = out.size()
+        #b,c,h,w = out.size()
         #print(1, b,c,h,w)
-        out = out.view(b,c, -1)
+        out = out.view(1,32, -1)
         # 32x64
-        out = torch.bmm(out,out.transpose(1,2)).div(h*w)
+        out = torch.bmm(out,out.transpose(1,2)).div(144*256)
         #print(2,out.size())
         # 32x32
-        out = out.view(b,-1)
+        out = out.view(1,-1)
         return self.fc(out)
 
 class MulLayer(nn.Module):
@@ -151,33 +151,33 @@ class MulLayer(nn.Module):
     def forward(self, cF,sF, trans=True):
 
         #cFBK = cF.clone()
-        cb, cc, ch, cw = cF.size()
-        cFF = cF.view(cb, cc, -1)
+        #cb, cc, ch, cw = cF.size()
+        cFF = cF.view(1, 64, -1)
 
         cMean = torch.mean(cFF,dim=2,keepdim=True)
         cMean = cMean.unsqueeze(3)
         cF = cF - cMean
 
-        sb, sc, sh, sw = sF.size()
-        sFF = sF.view(sb, sc, -1)
+        #sb, sc, sh, sw = sF.size()
+        sFF = sF.view(1, 64, -1)
         sMean = torch.mean(sFF,dim=2,keepdim=True)
         sMean = sMean.unsqueeze(3)
-        self.sMeanC = sMean.expand_as(cF)
-        sMeanS = sMean.expand_as(sF)
-        sF = sF - sMeanS
+        #self.sMeanC = sMean.expand_as(cF)
+        #sMeanS = sMean.expand_as(sF)
+        sF = sF - sMean
 
         compress_content = self.compress(cF)
-        b,c,h,w = compress_content.size()
-        compress_content = compress_content.view(b,c,-1)
+        #b,c,h,w = compress_content.size()
+        compress_content = compress_content.view(1,32,-1)
 
         cMatrix = self.cnet(cF)
         sMatrix = self.snet(sF)
 
-        sMatrix = sMatrix.view(sMatrix.size(0),self.matrixSize,self.matrixSize)
-        cMatrix = cMatrix.view(cMatrix.size(0),self.matrixSize,self.matrixSize)
+        sMatrix = sMatrix.view(1,self.matrixSize,self.matrixSize)
+        cMatrix = cMatrix.view(1,self.matrixSize,self.matrixSize)
         self.transmatrix = torch.bmm(sMatrix,cMatrix)
-        transfeature = torch.bmm(self.transmatrix,compress_content).view(b,c,h,w)
-        out = self.unzip(transfeature.view(b,c,h,w))
-        out = out + self.sMeanC
+        transfeature = torch.bmm(self.transmatrix,compress_content).view(1,32,256,144)
+        out = self.unzip(transfeature.view(1,32,256,144))
+        out = out + sMean
         return out
 
