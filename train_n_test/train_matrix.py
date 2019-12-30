@@ -13,14 +13,14 @@ from libs.Criterion import LossCriterion
 from libs.parametric_models import encoder3, MulLayer, decoder3
 from libs.models import encoder5
 
-BATCH_SIZE = 4
+BATCH_SIZE = 8
 CROP_SIZE = 300
-WIDTH = 0.5
-ENCODER_SAVE_PATH = f'models/parametric/vgg_r31_W{WIDTH}.pth'
-DECODER_SAVE_PATH = f'models/parametric/dec_r31_W{WIDTH}.pth'
+WIDTH = 0.25
+ENCODER_SAVE_PATH = f'models/pruned/autoencoder/vgg_r31.pth'
+DECODER_SAVE_PATH = f'models/pruned/autoencoder/dec_r31.pth'
 MATRIX_SAVE_PATH  = f'models/parametric/matrix_r31_W{WIDTH}.pth'
 LOSS_MODULE_PATH  = 'models/regular/vgg_r51.pth'
-EPOCHS = 20
+EPOCHS = 10
 
 class Trainer(object):
     def __init__(self):
@@ -33,7 +33,7 @@ class Trainer(object):
             datapath+'mscoco/validate', datapath+'wikiart/validate')
 
 
-        self.matrix = MulLayer('r31', WIDTH)
+        self.matrix = MulLayer(WIDTH)
         self.matrix.train()
         self.matrix.cuda()
         try:
@@ -88,7 +88,7 @@ class Trainer(object):
 
     def train(self):
         best_val = 1e9
-        with open('log_matrix.txt', 'w+') as f:
+        with open('log_matrix3.txt', 'w+') as f:
             for epoch in range(1, EPOCHS+1): # count from one
                 self.train_single_epoch(epoch, f)
                 val = self.validate_single_epoch(epoch, f)
@@ -125,10 +125,10 @@ class Trainer(object):
                   f'ContentLoss: {contentLoss:.6f} ')
             f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
                   f'Batch: [{batch_i+1}/{batch_num}] ' +
-                  f'Loss: {loss:.6f}')
+                  f'Loss: {loss:.6f}\n')
 
     def validate_single_epoch(self, epoch, f):
-        batch_num = len(self.valid_train)      # number of batches in training epoch
+        batch_num = len(self.content_valid)      # number of batches in training epoch
         self.matrix.eval()
         losses = []
         
@@ -148,14 +148,14 @@ class Trainer(object):
                 loss, styleLoss, contentLoss = self.criterion(tF_loss, sF_loss, cF_loss)
 
                 losses.append(loss.item())
-                print(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                print(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                       f'Batch: [{batch_i+1}/{batch_num}] ' +
                       f'Loss: {loss:.6f} '+
                       f'StyleLoss: {styleLoss:.6f} ' + 
                       f'ContentLoss: {contentLoss:.6f} ')
-                f.write(f'Train Epoch: [{epoch}/{EPOCHS}] ' + 
+                f.write(f'Validate Epoch: [{epoch}/{EPOCHS}] ' + 
                       f'Batch: [{batch_i+1}/{batch_num}] ' +
-                      f'Loss: {loss:.6f}')
+                      f'Loss: {loss:.6f}\n')
         return np.mean(np.array(losses))
 
 

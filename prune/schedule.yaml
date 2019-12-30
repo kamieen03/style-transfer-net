@@ -1,17 +1,23 @@
 version: 1
 
 pruners:
+  half_prunner:
+    class: L1RankedStructureParameterPruner_AGP
+    initial_sparsity : 0.05
+    group_type: Filters
+    weights: [vgg_c.conv2.weight,
+              vgg_s.conv2.weight,
+              dec.conv10.weight]
+
   filter_pruner:
     class: L1RankedStructureParameterPruner_AGP
     initial_sparsity : 0.05
-    final_sparsity: 0.50
+    final_sparsity: 0.75
     group_type: Filters
-    weights: [vgg_c.conv2.weight,
-              vgg_c.conv3.weight,
+    weights: [vgg_c.conv3.weight,
               vgg_c.conv4.weight,
               vgg_c.conv5.weight,
 #              vgg_c.conv6.weight,
-              vgg_s.conv2.weight,
               vgg_s.conv3.weight,
               vgg_s.conv4.weight,
               vgg_s.conv5.weight,
@@ -23,16 +29,15 @@ pruners:
               matrix.cnet.convs.0.weight,
               matrix.cnet.convs.2.weight,
 #              matrix.cnet.convs.4.weight,
-              matrx.unzip.weight,
+#              matrx.unzip.weight,
               dec.conv7.weight,
               dec.conv8.weight,
-              dec.conv9.weight,
-              dec.conv10.weight]
+              dec.conv9.weight]
 
   unzip_pruner:
     class: L1RankedStructureParameterPruner_AGP
     initial_sparsity : 0.05
-    final_sparsity: 0.50
+    final_sparsity: 0.75
     group_type: Filters
     group_dependency: Leader
     weights: [vgg_c.conv6.weight,
@@ -46,21 +51,15 @@ extensions:
     arch: 'transformer_r3'
     dataset: 'mscoco'
 
-lr_schedulers:
-  pruning_lr:
-    class: ExponentialLR
-    gamma: 0.99
-
-
 policies:
   - pruner:
       instance_name : filter_pruner
-    starting_epoch: 0
+    starting_epoch: 1
     ending_epoch: 10
     frequency: 1
   - pruner:
       instance_name : unzip_pruner
-    starting_epoch: 0
+    starting_epoch: 1
     ending_epoch: 10
     frequency: 1
 
@@ -69,9 +68,3 @@ policies:
       instance_name: net_thinner
     epochs: [11]
 
-
-  - lr_scheduler:
-      instance_name: pruning_lr
-    starting_epoch: 12
-    ending_epoch: 20
-    frequency: 1

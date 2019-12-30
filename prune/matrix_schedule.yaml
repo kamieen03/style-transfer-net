@@ -1,0 +1,81 @@
+version: 1
+
+pruners:
+  filter_pruner:
+    class: L1RankedStructureParameterPruner_AGP
+    initial_sparsity : 0.05
+    final_sparsity: 0.50
+    group_type: Filters
+    weights: [vgg_c.conv2.weight,
+              vgg_c.conv3.weight,
+              vgg_c.conv4.weight,
+              vgg_c.conv5.weight,
+#              vgg_c.conv6.weight,
+              vgg_s.conv2.weight,
+              vgg_s.conv3.weight,
+              vgg_s.conv4.weight,
+              vgg_s.conv5.weight,
+#              vgg_s.conv6.weight,
+#              matrix.compress.weight,
+              matrix.snet.convs.0.weight,
+              matrix.snet.convs.2.weight,
+#              matrix.snet.convs.4.weight,
+              matrix.cnet.convs.0.weight,
+              matrix.cnet.convs.2.weight,
+#              matrix.cnet.convs.4.weight,
+              matrx.unzip.weight,
+              dec.conv7.weight,
+              dec.conv8.weight,
+              dec.conv9.weight,
+              dec.conv10.weight]
+
+  unzip_pruner:
+    class: L1RankedStructureParameterPruner_AGP
+    initial_sparsity : 0.05
+    final_sparsity: 0.50
+    group_type: Filters
+    group_dependency: Leader
+    weights: [vgg_c.conv6.weight,
+              vgg_s.conv6.weight,
+              matrix.unzip.weight]
+
+
+extensions:
+  net_thinner:
+    class: 'FilterRemover'
+    thinning_func_str: remove_filters
+    arch: 'transformer_r3'
+    dataset: 'mscoco'
+
+lr_schedulers:
+  pruning_lr:
+    class: ExponentialLR
+    gamma: 0.95
+
+
+policies:
+  - pruner:
+      instance_name : filter_pruner
+    starting_epoch: 1
+    ending_epoch: 1
+    frequency: 1
+  - pruner:
+      instance_name : unzip_pruner
+    starting_epoch: 1
+    ending_epoch: 1
+    frequency: 1
+
+# After completeing the pruning, we perform network thinning and continue fine-tuning.
+  - extension:
+      instance_name: net_thinner
+    epochs: [2]
+  #- extension:
+  #    instance_name: net_thinner
+  #  epochs: [11]
+
+
+  - lr_scheduler:
+      instance_name: pruning_lr
+    starting_epoch: 3
+    ending_epoch: 10
+    frequency: 1

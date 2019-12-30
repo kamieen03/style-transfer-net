@@ -21,15 +21,16 @@ class CNN(nn.Module):
 
         # 32x8x8
         self.fc = nn.Linear(matrixSize*matrixSize,matrixSize*matrixSize)
-        #self.fc = nn.Linear(32*64,256*256)
 
     def forward(self,x):
         out = self.convs(x)
         # 32x8x8
         b,c,h,w = out.size()
+        #print(1, b,c,h,w)
         out = out.view(b,c,-1)
         # 32x64
         out = torch.bmm(out,out.transpose(1,2)).div(h*w)
+        #print(2,out.size())
         # 32x32
         out = out.view(out.size(0),-1)
         return self.fc(out)
@@ -49,15 +50,15 @@ class MulLayer(nn.Module):
             self.unzip = nn.Conv2d(matrixSize,256,1,1,0)
         self.transmatrix = None
 
-    def forward(self, cF,sF,trans=True):
+    def forward(self, cF,sF,n,alpha=1.0,trans=True):
         #cFBK = cF.clone()
         cb,cc,ch,cw = cF.size()
         cFF = cF.view(cb,cc,-1)
         cMean = torch.mean(cFF,dim=2,keepdim=True)
         cMean = cMean.unsqueeze(3)
-        cMean = cMean.expand_as(cF)
         cF = cF - cMean
 
+        #sF = alpha*sF + (1-alpha)*cF
         sb,sc,sh,sw = sF.size()
         sFF = sF.view(sb,sc,-1)
         sMean = torch.mean(sFF,dim=2,keepdim=True)

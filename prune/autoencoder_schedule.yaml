@@ -1,0 +1,36 @@
+version: 1
+
+pruners:
+  filter_pruner:
+    class: L1RankedStructureParameterPruner_AGP
+    initial_sparsity : 0.05
+    final_sparsity: 0.75
+    group_type: Filters
+    weights: [encoder.conv2.weight,
+              encoder.conv3.weight,
+              encoder.conv4.weight,
+              encoder.conv5.weight,
+              encoder.conv6.weight,
+              decoder.conv7.weight,
+              decoder.conv8.weight,
+              decoder.conv9.weight,
+              decoder.conv10.weight]
+
+
+extensions:
+  net_thinner:
+    class: 'FilterRemover'
+    thinning_func_str: remove_filters
+    arch: 'autoencoder'
+    dataset: 'mscoco'
+
+policies:
+  - pruner:
+      instance_name : filter_pruner
+    starting_epoch: 1
+    ending_epoch: 4
+    frequency: 1
+  - extension:
+      instance_name: net_thinner
+    epochs: [5]
+

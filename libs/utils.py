@@ -108,48 +108,49 @@ def mosaic(contents, styles, stylized):
     :rtype: numpy.ndarray
     """
     GAP = 2     #gap in pixels between images in grid
-    _, _, W = stylized[0][0].shape
+    _, W, _ = stylized[0][0].shape
+    print(W)
 
     #reshape all pictures to the same width
-    for i, pic in enumerate(contents):
-    #    _, h, w = pic.shape
-        _, newh, neww = stylized[i][0].shape
-        pic = np.resize(pic, (3, newh, neww))
-    for pic in styles:
-        _, h, w = pic.shape
-        pic = pic.reshape((3, int(W * h/w), W))
+    for i in range(len(contents)):
+        h, w, c = contents[i].shape
+        contents[i] = cv2.resize(contents[i], (W, int(W * h/w)))
+    for i in range(len(styles)):
+        h, w, c = styles[i].shape
+        styles[i] = cv2.resize(styles[i], (W, int(W * h/w)))
 
     #create empty canvas
-    max_style_h = int(max([pic.shape[1] for pic in styles]))
-    total_h = max_style_h + sum([pic.shape[1] for pic in contents]) + len(contents)*GAP
+    max_style_h = int(max([pic.shape[0] for pic in styles]))
+    total_h = max_style_h + sum([pic.shape[0] for pic in contents]) + len(contents)*GAP
+    print(len(styles))
     total_w = (len(styles) + 1) * W + len(styles)*GAP
-    result = np.zeros((3, total_h, total_w))
+    result = np.zeros((total_h, total_w, 3))
+    print(result.shape)
 
     #paint content and style images in the first column and row
     h = max_style_h + GAP
     for pic in contents:
-        _, pic_h, _ = pic.shape
-        result[:, h:h + pic_h, :W] = pic
+        pic_h, _, _ = pic.shape
+        result[h:h + pic_h, :W, :] = pic
         h += pic_h + GAP
     w = W + GAP
     for pic in styles:
-        print(pic.shape)
-        _, pic_h, _ = pic.shape
-        result[:, max_style_h - pic_h:max_style_h, w:w+W] = pic
+        pic_h, _, _ = pic.shape
+        result[max_style_h - pic_h:max_style_h, w:w+W, :] = pic
         w += W + GAP
     
     #paint stylized images in correct columns and rows
     h, w = max_style_h + GAP, W + GAP
-    for row in stylized:
-        for pic in row:
-            _, pic_h, _ = pic.shape
-            result[:, h:h+pic_h, w:w+W] = pic
-            w += W + GAP
-        w = W + GAP
-        h += row[0].shape[1] + GAP
+    for col in stylized:
+        for pic in col:
+            pic_h, pic_w, _ = pic.shape
+            pic = cv2.resize(pic, (W, int(W * pic_h/pic_w)))
+            pic_h, _, _ = pic.shape
+            result[h:h+pic_h, w:w+W, :] = pic
+            h += pic_h + GAP
+        w += W + GAP
+        h = max_style_h + GAP
 
-
-    result = result.transpose(1,2,0)
     return result
 
 
