@@ -28,18 +28,18 @@ STYLE_PATH  = 'data/style/mobile.jpg'
 ################# MODEL #################
 if PARAMETRIC:
     from libs.parametric_models import encoder3, decoder3, MulLayer
-    e3c = encoder3(0.25).eval().cuda()
-    e3s = encoder3(0.25).eval().cuda()
-    d3 = decoder3(0.25).eval().cuda()
+    e3c = encoder3(0.25, False).eval().cuda()
+    e3s = encoder3(0.25, False).eval().cuda()
+    d3 = decoder3(0.25, False).eval().cuda()
     mat3 = MulLayer(0.25).eval().cuda()
-    #e3c.load_state_dict(torch.load('models/pruned/vgg_c_r31.pth'))
-    #e3s.load_state_dict(torch.load('models/pruned/vgg_s_r31.pth'))
-    #d3.load_state_dict(torch.load('models/pruned/dec_r31.pth'))
-    #mat3.load_state_dict(torch.load('models/pruned/matrix_r31.pth'))
-    e3c.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_c_r31.pth'))
-    e3s.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_s_r31.pth'))
-    d3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/dec_r31.pth'))
-    mat3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/matrix_r31.pth'))
+    e3c.load_state_dict(torch.load('models/pruned/vgg_c_r31.pth'))
+    e3s.load_state_dict(torch.load('models/pruned/vgg_s_r31.pth'))
+    d3.load_state_dict(torch.load('models/pruned/dec_r31.pth'))
+    mat3.load_state_dict(torch.load('models/pruned/matrix_r31.pth'))
+    #e3c.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_c_r31.pth'))
+    #e3s.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_s_r31.pth'))
+    #d3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/dec_r31.pth'))
+    #mat3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/matrix_r31.pth'))
 
 else:
     from libs.models import encoder3, decoder3 
@@ -80,7 +80,6 @@ if RGB:
     style = cv2.cvtColor(style, cv2.COLOR_BGR2RGB)
 style = style.transpose((2,0,1))
 style = torch.from_numpy(style).unsqueeze(0).cuda()
-style = style / 255.0
 with torch.no_grad():
     sF = e3s(style)
     #sF_loss = vgg5(style)
@@ -88,7 +87,6 @@ with torch.no_grad():
 i = 0
 tt = time()
 with torch.no_grad():
-    n = 0
     while(True):
         ret, frame = cap.read()
         if not ret: break
@@ -97,15 +95,13 @@ with torch.no_grad():
         frame = frame.transpose((2,0,1))
         frame = torch.from_numpy(frame).unsqueeze(0)
         content = frame.cuda()
-        content = content/255.0
         torch.cuda.synchronize()
         T = time()
         transfer = e3c(content)
-        transfer = mat3(transfer, sF, n, 3.0)
+        transfer = mat3(transfer, sF, 0.5)
         transfer = d3(transfer)
         torch.cuda.synchronize()
         print(time()-T)
-        n += 1
 
         #torch.cuda.synchronize()
         #xx = time()
@@ -125,8 +121,8 @@ with torch.no_grad():
             tF = vgg5(transfer)
             loss,styleLoss,contentLoss = criterion(tF,sF_loss,cF_loss)
             print(loss.item(), styleLoss.item(), contentLoss.item())
-        transfer = transfer.clamp(0,1).squeeze(0)*255
-        transfer = transfer.type(torch.uint8).data.cpu().numpy()
+        transfer = transfer.type(torch.uint8).data.cpu().numpy()[0]
+        print(transfer.shape)
         transfer = transfer.transpose((1,2,0))
         if RGB:
             transfer = cv2.cvtColor(transfer, cv2.COLOR_RGB2BGR)

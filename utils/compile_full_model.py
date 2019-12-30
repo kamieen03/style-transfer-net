@@ -35,10 +35,11 @@ if torch.no_grad():
 
     x = torch.ones(1,64,256,144).cuda()
     y = torch.ones(1,64,256,144).cuda()
-    torch.onnx.export(matrix, (x, y), 'models/onnx/matrix.onnx', verbose=True,
-                        input_names=['content', 'style'], output_names=['output_matrix'])
+    z = torch.ones(1).cuda()
+    torch.onnx.export(matrix, (x, y, z), 'models/onnx/matrix.onnx', verbose=True,
+                        input_names=['content', 'style', 'alpha'], output_names=['output_matrix'])
     print("Saved matrix")
-    del x; del y
+    del x; del y; del z
 
     x = torch.ones(1,64,256,144).cuda()
     torch.onnx.export(d3, x, 'models/onnx/decoder.onnx', verbose=True,

@@ -150,12 +150,11 @@ class MulLayer(nn.Module):
         self.unzip = nn.Conv2d(matrixSize,int(256*W),1,1,0)
         self.transmatrix = None
 
-    def forward(self, cF,sF, trans=True):
+    def forward(self, cF, sF, alpha, trans=True):
 
         #cFBK = cF.clone()
         #cb, cc, ch, cw = cF.size()
         cFF = cF.view(1, 64, -1)
-
         cMean = torch.mean(cFF,dim=2,keepdim=True)
         cMean = cMean.unsqueeze(3)
         cF = cF - cMean
@@ -167,6 +166,8 @@ class MulLayer(nn.Module):
         #self.sMeanC = sMean.expand_as(cF)
         #sMeanS = sMean.expand_as(sF)
         sF = sF - sMean
+
+        sF = sF * alpha + (1-alpha) * cF
 
         compress_content = self.compress(cF)
         #b,c,h,w = compress_content.size()
