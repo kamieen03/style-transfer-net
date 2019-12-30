@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class encoder3(nn.Module):
-    def __init__(self, W, v2):
+    def __init__(self, W, v2=False):
         super(encoder3,self).__init__()   # W - width
         # vgg
         # 224 x 224
@@ -61,7 +61,7 @@ class encoder3(nn.Module):
         return out
 
 class decoder3(nn.Module):
-    def __init__(self, W, v2):
+    def __init__(self, W, v2=False):
         super(decoder3,self).__init__()
         # decoder
         self.reflecPad7 = nn.ZeroPad2d((1,1,1,1))
@@ -128,7 +128,7 @@ class CNN(nn.Module):
         out = self.convs(x)
         # 32x8x8
         #b,c,h,w = out.size()
-        #print(1, b,c,h,w)
+        #print(b,c,h,w)
         out = out.view(1,32, -1)
         # 32x64
         out = torch.bmm(out,out.transpose(1,2)).div(144*256)

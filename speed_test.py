@@ -23,7 +23,7 @@ PARAMETRIC = '-p' in sys.argv
 WIDTH = 0.25
 LOSS_MODULE_PATH = 'models/regular/vgg_r51.pth'
 
-STYLE_PATH  = 'data/style/picasso.jpg'
+STYLE_PATH  = 'data/style/1024x576/sketch.jpg'
 
 ################# MODEL #################
 if PARAMETRIC:
@@ -32,14 +32,14 @@ if PARAMETRIC:
     e3s = encoder3(0.25).eval().cuda()
     d3 = decoder3(0.25).eval().cuda()
     mat3 = MulLayer(0.25).eval().cuda()
-    #e3c.load_state_dict(torch.load('models/pruned/vgg_c_r31.pth'))
-    #e3s.load_state_dict(torch.load('models/pruned/vgg_s_r31.pth'))
-    #d3.load_state_dict(torch.load('models/pruned/dec_r31.pth'))
-    #mat3.load_state_dict(torch.load('models/pruned/matrix_r31.pth'))
-    e3c.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_c_r31.pth'))
-    e3s.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_s_r31.pth'))
-    d3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/dec_r31.pth'))
-    mat3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/matrix_r31.pth'))
+    e3c.load_state_dict(torch.load('models/pruned/vgg_c_r31.pth'))
+    e3s.load_state_dict(torch.load('models/pruned/vgg_s_r31.pth'))
+    d3.load_state_dict(torch.load('models/pruned/dec_r31.pth'))
+    mat3.load_state_dict(torch.load('models/pruned/matrix_r31.pth'))
+    #e3c.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_c_r31.pth'))
+    #e3s.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/vgg_s_r31.pth'))
+    #d3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/dec_r31.pth'))
+    #mat3.load_state_dict(torch.load('models/prunedv2/prunedv2_0.02_0.6/matrix_r31.pth'))
 
 else:
     from libs.models import encoder3, decoder3 
@@ -60,7 +60,7 @@ vgg5.cuda().eval()
 
 
 ################# GPU  #################
-cap = cv2.VideoCapture('data/videos/tram.avi')   #assume it's 576x1024 (HxW)
+cap = cv2.VideoCapture('data/videos/tram_mobile.avi')   #assume it's 576x1024 (HxW)
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 out = cv2.VideoWriter('data/videos/out_vid.avi', fourcc, 20.0, (1024,576))
 
