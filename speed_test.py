@@ -23,7 +23,7 @@ PARAMETRIC = '-p' in sys.argv
 WIDTH = 0.25
 LOSS_MODULE_PATH = 'models/regular/vgg_r51.pth'
 
-STYLE_PATH  = 'data/style/picasso.jpg'
+STYLE_PATH  = 'data/style/mobile.jpg'
 
 ################# MODEL #################
 if PARAMETRIC:
@@ -54,13 +54,13 @@ else:
     mat3 = MulLayer('r31').eval().cuda()
     mat3.load_state_dict(torch.load('models/regular/r31.pth'))
 
-vgg5 = encoder5()
-vgg5.load_state_dict(torch.load(LOSS_MODULE_PATH))
-vgg5.cuda().eval()
+#vgg5 = encoder5()
+#vgg5.load_state_dict(torch.load(LOSS_MODULE_PATH))
+#vgg5.cuda().eval()
 
 
 ################# GPU  #################
-cap = cv2.VideoCapture('data/videos/tram.avi')   #assume it's 576x1024 (HxW)
+cap = cv2.VideoCapture('data/videos/tram_mobile.avi')   #assume it's 576x1024 (HxW)
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 out = cv2.VideoWriter('data/videos/out_vid.avi', fourcc, 20.0, (1024,576))
 
@@ -83,7 +83,7 @@ style = torch.from_numpy(style).unsqueeze(0).cuda()
 style = style / 255.0
 with torch.no_grad():
     sF = e3s(style)
-    sF_loss = vgg5(style)
+    #sF_loss = vgg5(style)
 
 i = 0
 tt = time()
@@ -101,7 +101,7 @@ with torch.no_grad():
         torch.cuda.synchronize()
         T = time()
         transfer = e3c(content)
-        transfer = mat3(transfer, sF, n)
+        transfer = mat3(transfer, sF, n, 3.0)
         transfer = d3(transfer)
         torch.cuda.synchronize()
         print(time()-T)

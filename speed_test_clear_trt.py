@@ -26,7 +26,7 @@ vgg_s_engine = None
 matrix_engine = None
 decoder_engine = None
 
-TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)
+TRT_LOGGER = trt.Logger(trt.Logger.ERROR)
 
 # Allocate host and device buffers, and create a stream.
 def allocate_buffers(vgg_c_engine, vgg_s_engine, matrix_engine, decoder_engine):
@@ -68,6 +68,7 @@ def do_inference(h_content, d_content, h_style, d_style, h_vgg_content_out, d_vg
         context.execute_async(bindings=[int(d_matrix_out), int(d_decoder_out)], stream_handle=stream.handle)
     # move stylized picture to host memory
     cuda.memcpy_dtoh_async(h_decoder_out, d_decoder_out, stream)
+    print(type(h_decoder_out))
     stream.synchronize()
 
 
@@ -100,7 +101,6 @@ def loop_inference(h_content, d_content, h_style, d_style,
         out = cv2.cvtColor(out, cv2.COLOR_RGB2BGR)
         print((time.time()-tt)/i)
 
-        #out.write(np.uint8(transfer*255))
         if VISUAL:
             cv2.imshow('frame', out)
             if cv2.waitKey(1) & 0xFF == ord('q'):

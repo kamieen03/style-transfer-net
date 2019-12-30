@@ -40,6 +40,7 @@ class encoder3(nn.Module):
         self.relu6 = nn.ReLU(inplace=True)
         # 56 x 56
     def forward(self,x):
+        x   = x / 255.0
         out = self.conv1(x)
         out = self.reflecPad1(out)
         out = self.conv2(out)
@@ -109,6 +110,7 @@ class decoder3(nn.Module):
         out = self.relu10(out)
         out = self.reflecPad11(out)
         out = self.conv11(out)
+        out = out.clamp(0,1)*255
         return out
 
 class CNN(nn.Module):

@@ -52,13 +52,13 @@ class MulLayer(nn.Module):
 
     def forward(self, cF,sF,n,alpha=1.0,trans=True):
         #cFBK = cF.clone()
+        sF = alpha*sF + (1-alpha)*cF
         cb,cc,ch,cw = cF.size()
         cFF = cF.view(cb,cc,-1)
         cMean = torch.mean(cFF,dim=2,keepdim=True)
         cMean = cMean.unsqueeze(3)
         cF = cF - cMean
 
-        #sF = alpha*sF + (1-alpha)*cF
         sb,sc,sh,sw = sF.size()
         sFF = sF.view(sb,sc,-1)
         sMean = torch.mean(sFF,dim=2,keepdim=True)
