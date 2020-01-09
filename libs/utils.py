@@ -8,7 +8,6 @@ import numpy as np
 import scipy.sparse
 from PIL import Image
 import scipy.sparse.linalg
-from cv2.ximgproc import jointBilateralFilter
 from numpy.lib.stride_tricks import as_strided
 import matplotlib.pyplot as plt
 
